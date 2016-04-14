@@ -8,6 +8,17 @@ julia (http://julialang.org/)
 GNU parallel (http://www.gnu.org/software/parallel/)
 alias wrkt 'cd ~/work/workt; ls'
 
+# create local links to all analysis data files and example ncdumps too
+wrkt ; mkdir v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_geostrophic v2.0_global_025_deg_total_15m v2.0_global_025_deg_total_hs
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_15m   ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_15m
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_hs    ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_hs
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_geostrophic ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/geostrophic
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_15m   ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_15m
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_hs    ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_hs
+
+
+
+
 # make local links to all data files
 wrkt ; mkdir links linkt
 cd /home/cercache/project/globcurrent/data/globcurrent/global_010_deg/total_15m/data

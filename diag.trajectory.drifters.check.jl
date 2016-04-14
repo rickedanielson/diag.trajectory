@@ -13,7 +13,8 @@ files = filter(x -> ismatch(r"^\d{4}-\d{2}-\d{2}-\d{4}\.\d{8}$", x), readdir("."
 # (count,) = size(files) ; print("found $count files\n")
 
 for (a, file) in enumerate(files)
-  filf = file * ".traj." * file[1:15]
+  filf = file * ".gif"
+# filf = file * ".traj." * file[1:15]
   if file[1:3] == "201" && !isfile(filf)  print("$file missing $filf\n")  end
 # if filesize(file) < 1000  print("mv $file ../limbo\n")  end
 # if filesize(file) < 1000  print("wc $file\n")  end

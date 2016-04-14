@@ -17,11 +17,12 @@ if size(ARGS) != (0,)
 end
 
 polygons = Array(Polygon, 0)
-#(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS")
-#(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid")
-#(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid_simple")
- (polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS.gra/GlobCurrent_shapefiles_CNES-CLS13_RSMAS")
-#(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid.gra/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid")
+##(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS")
+##(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid")
+##(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid_simple")
+# (polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS.gra/GlobCurrent_shapefiles_CNES-CLS13_RSMAS")
+##(polynames, polypoints) = My.obtenpoly("/home/ricani/data/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid.gra/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid")
+  (polynames, polypoints) = My.obtenpoly("/home/cercache/users/rdaniels/mdt/GlobCurrent_shapefiles_CNES-CLS13_RSMAS_valid")
 for (a, line) in enumerate(polypoints)
 # print("$a :$line: $a\n")
 # if a == 13 || a == 16

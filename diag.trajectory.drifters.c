@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "/home/ricani/prog/include.netcdf/include/cdcnetcdf.h"
+#include "prog/include.netcdf/include/cdcnetcdf.h"
 
 #define LEN        100
 #define LOTS       15000
@@ -123,7 +123,7 @@ main(int argc, char *argv[])
       printf("%s %ld %ld %ld\n", date[a], datebef[a], datemid[a], dateaft[a]);
     }
 
-    sprintf(infila, "../../links/%ld", datebef[0]);                              /* read the first INI grids into FIN */
+    sprintf(infila, "../links/%ld", datebef[0]);                              /* read the first INI grids into FIN */
     strcat(infila, "00-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v01.0-fv01.0.nc");
     strcpy(tmpdate, date[0]) ; tmpdate[13] = '\0';
     for (b = 0; b < PARAMS; b++) {
@@ -132,8 +132,8 @@ main(int argc, char *argv[])
     }
 
     for (a = 0; a < count - 1; a++) {                                         /* then for each date interval shift FIN */
-      sprintf(infilb, "../../links/%ld", datemid[a]);                            /* to INI and read the new MID/FIN data */
-      sprintf(infilc, "../../links/%ld", datebef[a+1]);                          /* and advance all valid trajectories */
+      sprintf(infilb, "../links/%ld", datemid[a]);                            /* to INI and read the new MID/FIN data */
+      sprintf(infilc, "../links/%ld", datebef[a+1]);                          /* and advance all valid trajectories */
       strcat(infilb, "00-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v01.0-fv01.0.nc");
       strcat(infilc, "00-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v01.0-fv01.0.nc");
       for (b = 0; b < PARAMS; b++) {
