@@ -8,47 +8,47 @@ julia (http://julialang.org/)
 GNU parallel (http://www.gnu.org/software/parallel/)
 alias wrkt 'cd ~/work/workt; ls'
 
+# copy data then isolate and plot the location of drifters not in the CNES-CLS-2013 MDT
+wrkt ; cd insitu ; cp /home/cercache/project/globcurrent/data/third-party/insitu/drifters-rio/* .
+       jjj diag.trajectory.drifters.nonmdt.jl buoydata_1993_2014_drogON.asc
+       jjj diag.trajectory.drifters.locate.jl buoydata_1993_2014_drogON.asc.nonmdt
+       xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate"
+
+# split the daily average observations into calibration and validation groups
+wrkt ; cd insitu
+       jjj diag.trajectory.drifters.split.jl buoydata_1993_2014_drogON.asc.nonmdt.locate
+       jjj diag.trajectory.drifters.split.jl buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid
+       mv buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid           buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib_remainder
+       mv buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_2.0_calib buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid
+       mv buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_2.0_valid buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder
+       xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib"
+       xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid"
+       xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib_remainder"
+       xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder"
+
 # create local links to all analysis data files and example ncdumps too
 wrkt ; mkdir v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_geostrophic v2.0_global_025_deg_total_15m v2.0_global_025_deg_total_hs
-       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_15m   ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_15m
-       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_hs    ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_hs
-       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_geostrophic ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/geostrophic
-       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_15m   ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_15m
-       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_hs    ; jjj diag.heat.flux.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_hs
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_15m   ; jjj diag.trajectory.drifters.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_15m
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_hs    ; jjj diag.trajectory.drifters.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_hs
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_geostrophic ; jjj diag.trajectory.drifters.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/geostrophic
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_15m   ; jjj diag.trajectory.drifters.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_15m
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_hs    ; jjj diag.trajectory.drifters.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_hs
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_15m   ; mkdir old ; mv 200* old ; mv 201[01]* old ; mv 20120[1-8]* old
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_hs    ; mkdir old ; mv 200* old ; mv 201[01]* old ; mv 20120[1-8]* old
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_geostrophic ; mkdir old ; mv 200* old ; mv 201[01]* old ; mv 20120[1-8]* old
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_15m   ; mkdir old ; mv 200* old ; mv 201[01]* old ; mv 20120[1-8]* old
+       cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_total_hs    ; mkdir old ; mv 200* old ; mv 201[01]* old ; mv 20120[1-8]* old
+wrkt ; mkdir ncdump
+       ncdump   v2.0_global_025_deg_ekman_15m/20120901000000-GLOBCURRENT-L4-CURekm_15m-ERAWS_EEM-v02.0-fv01.0.nc > ncdump/v2.0_global_025_deg_ekman_15m
+       ncdump    v2.0_global_025_deg_ekman_hs/20120901000000-GLOBCURRENT-L4-CURekm_hs-ERAWS_EEM-v02.0-fv01.0.nc  > ncdump/v2.0_global_025_deg_ekman_hs
+       ncdump v2.0_global_025_deg_geostrophic/20120901000000-GLOBCURRENT-L4-CURgeo_0m-ALT_OI-v02.0-fv01.0.nc     > ncdump/v2.0_global_025_deg_geostrophic
+       ncdump   v2.0_global_025_deg_total_15m/20120901000000-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v02.0-fv01.0.nc   > ncdump/v2.0_global_025_deg_total_15m
+       ncdump    v2.0_global_025_deg_total_hs/20120901000000-GLOBCURRENT-L4-CUReul_hs-ALT_SUM-v02.0-fv01.0.nc    > ncdump/v2.0_global_025_deg_total_hs
 
 
 
 
-# make local links to all data files
-wrkt ; mkdir links linkt
-cd /home/cercache/project/globcurrent/data/globcurrent/global_010_deg/total_15m/data
-cd /home/cercache/project/globcurrent/data/globcurrent/global_010_deg/geostrophic/data
-cd /home/cercache/project/globcurrent/data/globcurrent/global_010_deg/ekman_15m/data
-cd /home/cercache/project/globcurrent/data/globcurrent/global_010_deg/ekman_hs/data
-finf "*GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v01.0-fv01.0.nc" | sort > /home/cercache/users/rdaniels/work/workt/links/lst
-finf "*GLOBCURRENT-L4-CURgeo_0m-ALT_OI-v01.0-fv01.0.nc"   | sort > /home/cercache/users/rdaniels/work/workt/linkt/lst
-finf "*GLOBCURRENT-L4-CURekm_15m-ERAWS_EEM-v01.0-fv01.0.nc" | sort > /home/cercache/users/rdaniels/work/workt/linku/lst
-finf "*GLOBCURRENT-L4-CURekm_hs-ERAWS_EEM-v01.0-fv01.0.nc" | sort > /home/cercache/users/rdaniels/work/workt/linkv/lst
-wrkt ; cd links ; vi links.jl
-wrkt ; cd linkt ; vi links.jl
-wrkt ; cd linku ; vi links.jl
-wrkt ; cd linkv ; vi links.jl
- tar = "/home/cercache/project/globcurrent/data/globcurrent/global_010_deg/total_15m/data/"
- tar = "/home/cercache/project/globcurrent/data/globcurrent/global_010_deg/geostrophic/data/"
- tar = "/home/cercache/project/globcurrent/data/globcurrent/global_010_deg/ekman_15m/data/"
- tar = "/home/cercache/project/globcurrent/data/globcurrent/global_010_deg/ekman_hs/data/"
- f = open("lst");
- lines = readlines(f)
- close(f)
- for t in lines
-   u = split(t,"./")
-   v = split(u[end],"\n")
-   w = split(v[1],"/")
-   x = w[end]
-   command = "ln -s $tar" * v[1] * " $x"
-   println(command)
- end
-julia links.jl > links ; csh links ; rm l*
+
 
 # store drifters (lasting more than a day) as individual files
 wrkt

@@ -5,7 +5,7 @@
  =#
 
 if size(ARGS) != (1,)
-  print("\nUsage: jjj $(basename(@__FILE__)) /home/cercache/project/oceanheatflux/data/references/ifremerflux\n\n")
+  print("\nUsage: jjj $(basename(@__FILE__)) /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_15m\n\n")
   exit(1)
 end
 
