@@ -9,13 +9,13 @@ GNU parallel (http://www.gnu.org/software/parallel/)
 alias wrkt 'cd ~/work/workt; ls'
 
 # copy data then isolate and plot the location of drifters not in the CNES-CLS-2013 MDT
-wrkt ; cd insitu ; cp /home/cercache/project/globcurrent/data/third-party/insitu/drifters-rio/* .
+wrkt ; cd all ; cp /home/cercache/project/globcurrent/data/third-party/insitu/drifters-rio/* .
        jjj diag.trajectory.drifters.nonmdt.jl buoydata_1993_2014_drogON.asc
        jjj diag.trajectory.drifters.locate.jl buoydata_1993_2014_drogON.asc.nonmdt
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate"
 
-# split the daily average observations into calibration and validation groups
-wrkt ; cd insitu
+# split the drifter data by location into calibration and validation groups
+wrkt ; cd all
        jjj diag.trajectory.drifters.split.jl buoydata_1993_2014_drogON.asc.nonmdt.locate
        jjj diag.trajectory.drifters.split.jl buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid
        mv buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid           buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib_remainder
@@ -45,6 +45,13 @@ wrkt ; mkdir ncdump
        ncdump   v2.0_global_025_deg_total_15m/20120901000000-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v02.0-fv01.0.nc   > ncdump/v2.0_global_025_deg_total_15m
        ncdump    v2.0_global_025_deg_total_hs/20120901000000-GLOBCURRENT-L4-CUReul_hs-ALT_SUM-v02.0-fv01.0.nc    > ncdump/v2.0_global_025_deg_total_hs
 
+# further split the in situ cal/val observations by location and store files in an insitu dir
+wrkt ; mkdir insitu
+       sort -k7,7 -k6,6 -k5,5 all/buoydata_1993_2014_drogON.asc.nonmdt > buoydata_1993_2014_drogON.asc.nonmdt.sort
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.split.location.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali? ::: buoydata_1993_2014_drogON.asc.nonmdt.sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       cd insitu ; ls -1 ins* | grep -v OHF > z.list ; cd .. ; wc insitu/z.list
+       rm all.flux.daily.sort
 
 
 

@@ -7,7 +7,7 @@
 
 function plot(args)
 dotfile = subwrd(args,1)
-dotsiz = 0.05
+dotsiz = 0.04
 
 fpz = "xyzzy.forgetit" ; "!echo $HOME > "fpz ; line = read(fpz) ; home = sublin(line,2) ; ret = close(fpz) ; "!rm "fpz
 "sdfopen "home"/data/mdt/MDT_CNES-CLS13_REF20_CF_extended.nc"
@@ -33,7 +33,7 @@ fpz = "xyzzy.forgetit" ; "!echo $HOME > "fpz ; line = read(fpz) ; home = sublin(
 "d flag-flag"
 *"run basemap L 15 15 M"
 "set shpopts 99" ; "set line 99"
-"draw shp "home"/prog/graphics.grads/lib/www.shapefiles/countries" ; "set line 1 1 6"
+"draw shp "home"/prog/graphics.grads/grads.lib/www.shapefiles/countries" ; "set line 1 1 6"
 
 countc = 0
 while (countc < 5)

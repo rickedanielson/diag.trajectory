@@ -21,10 +21,8 @@ fpb = My.ouvre(ARGS[1] * ".locate", "w")
 
 for line in readlines(fpa)                                                    # identify and count the collocations
   vals = split(line)
-  lat = float(vals[7])
-  lon = float(vals[6]) ; lon < -180 && (lon += 360) ; lon > 180 && (lon -= 360)
-  dellat, indlat = findmin(abs(lats - lat))
-  dellon, indlon = findmin(abs(lons - lon))
+  indlat = findin(lats, float(vals[2]))[1]
+  indlon = findin(lons, float(vals[3]))[1]
   push!(subs, (indlat, indlon))
   numb[indlon,indlat] += 1.0
 end
