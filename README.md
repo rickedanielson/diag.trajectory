@@ -47,11 +47,11 @@ wrkt ; mkdir ncdump
 
 # further split the in situ cal/val observations by location and store files in an insitu dir
 wrkt ; mkdir insitu
-       sort -k7,7 -k6,6 -k5,5 all/buoydata_1993_2014_drogON.asc.nonmdt > buoydata_1993_2014_drogON.asc.nonmdt.sort
+       sort -k2,2 -k3,3 -k1,1 all/buoydata_1993_2014_drogON.asc.nonmdt > buoydata_1993_2014_drogON.asc.nonmdt.sort
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.split.location.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali? ::: buoydata_1993_2014_drogON.asc.nonmdt.sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        cd insitu ; ls -1 ins* | grep -v OHF > z.list ; cd .. ; wc insitu/z.list
-       rm all.flux.daily.sort
+       rm buoydata_1993_2014_drogON.asc.nonmdt.sort
 
 
 

@@ -20,7 +20,7 @@ fpb = My.ouvre(ARGS[1] * ".nonmdt", "w")
 for line in eachline(fpa)
   vars = split(line)
   if float(vars[4]) >= 22889
-    jday = My.dateadd("1950-01-01-0000", float(vars[4]), "dy")
+    jday = My.dateadd("1950010100", float(vars[4]), "dy")
     lat = float(vars[6])
     lon = float(vars[5]) ; lon < -180 && (lon += 360) ; lon > 180 && (lon -= 360)
     dellat, indlat = findmin(abs(lats - lat))

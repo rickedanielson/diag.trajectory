@@ -38,7 +38,7 @@ for (a, line) in enumerate(lines)
 end
 
 locs = Array(Tuple{Float64, Float64}, 0)                                      # find the calib locations
-for a = 1:numlons                                                             # (largest number of daily obs
+for a = 1:numlons                                                             # (largest number of drifter obs
   for b = 1:numlats                                                           #  in each gridbox if available)
 #   @printf("%8.2f %8.2f\n", midlons[a], midlats[b])
     maxlat = maxlon = maxnum = -1.0
