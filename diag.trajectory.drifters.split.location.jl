@@ -33,8 +33,8 @@ n = 0 ; i = START                                                             # 
 fpb = My.ouvre(ARGS[2], "r")                                                  # entry undefined, starting with the second
 for line in eachline(fpb)                                                     # entry, data for a new location is stored
   push!(lins, line)
-  if i != START && lins[i][17:37] != lins[i-1][17:37]                         # at end of one location and beginning of
-    vals = split(lins[i-1])                                                   # next (where 17:37 cover lat and lon):
+  if i != START && lins[i][12:32] != lins[i-1][12:32]                         # at end of one location and beginning of
+    vals = split(lins[i-1])                                                   # next (where 12:32 cover lat and lon):
     lat = float(vals[2])
     lon = float(vals[3])
     if in((lat, lon), locs)                                                   # if the location is of interest then loop
@@ -44,17 +44,16 @@ for line in eachline(fpb)                                                     # 
       locdat = lins[locind][1:10]
       date = "2012090100"
       while parse(Int, date) < 2015010100
-        if parse(Int, date) > parse(Int, locdat)                              # note that date shouldn't ever pass locdat
-          print("\nERROR : date $date > locdat $locdat\n\n")                  # as might happen with two collocated drifters
-          exit(0)
+        while locind < i - 1 && parse(Int, date) > parse(Int, locdat)         # note that date shouldn't ever pass locdat
+          locind += 1 ; locdat = lins[locind][1:10]                           # unless there is more than one collocated
+          println("WARNING : collocation detected")                           # drifter, in which case the first is used
         end
         if date == locdat
           formb = lins[locind]
           if locind < i - 1  locind += 1  end
           locdat = lins[locind][1:10]
         else
-          formb = @sprintf("%10s %10.5f %10.5f   99999999     99999  9 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000\n",
-            date, lat, lon)
+          formb = @sprintf("%10s %10.5f %10.5f   99999999     99999  9 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000\n", date, lat, lon)
         end
         write(fpc, formb)
         date = My.dateadd(date, 6, "hr")
@@ -79,17 +78,16 @@ if in((lat, lon), locs)
   locdat = lins[locind][1:10] 
   date = "2012090100"
   while parse(Int, date) < 2015010100
-    if parse(Int, date) > parse(Int, locdat)                                  # note that date shouldn't ever pass locdat
-      print("\nERROR : date $date > locdat $locdat\n\n")                      # as might happen with two collocated drifters
-      exit(0)
+    while locind < i - 1 && parse(Int, date) > parse(Int, locdat)             # note that date shouldn't ever pass locdat
+      locind += 1 ; locdat = lins[locind][1:10]                               # unless there is more than one collocated
+      println("WARNING : collocation detected")                               # drifter, in which case the first is used
     end
     if date == locdat
       formb = lins[locind]
       if locind < i - 1  locind += 1  end
       locdat = lins[locind][1:10] 
     else
-      formb = @sprintf("%10s %10.5f %10.5f   99999999     99999  9 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000\n",
-        date, lat, lon)
+      formb = @sprintf("%10s %10.5f %10.5f   99999999     99999  9 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000 -9999.00000\n", date, lat, lon)
     end
     write(fpc, formb)
     date = My.dateadd(date, 6, "hr")
@@ -104,4 +102,5 @@ exit(0)
 
 #=
 for j = START:i-1  write(fpc, lins[j])  end
+2014100118    0.00000    2.25000     116130     31910  3 23649.75000     2.19200     0.11800     0.30970    -0.09700     0.20166     0.10230    -0.01952     0.01180     0.00068    -0.02360     0.01224     0.02165    -0.01290     0.06116  9999.00000  9999.00000
 =#
