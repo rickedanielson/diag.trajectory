@@ -22,7 +22,7 @@ driftfiles = filter(x -> (contains(x, ".traj") &&                             # 
 (count,) = size(driftfiles)
 print("\n  found $count trajectory files\n")
 
-tmpfiles = Array(ASCIIString, 0)
+tmpfiles = Array(UTF8String, 0)
 for (a, fila) in enumerate(driftfiles)                                        # first restrict the trajectory files to
   if filesize(fila) > 10700                                                   # those with data at all times (25 days)
     push!(tmpfiles,fila)
@@ -33,7 +33,7 @@ driftfiles = tmpfiles
 print("  among $count files valid at all times, skipping every $skip\n")
 
 count = 1
-tmpfiles = Array(ASCIIString, 0)                                              # then reduce the number of trajectory
+tmpfiles = Array(UTF8String, 0)                                               # then reduce the number of trajectory
 for (a, fila) in enumerate(driftfiles)                                        # files used to compute statistics
   if count == skip + 1                                                        # (skip = 3 is daily)
     push!(tmpfiles,fila)
@@ -44,7 +44,7 @@ end
 driftfiles = tmpfiles
 (count,) = size(driftfiles)
 
-trkfiles = Set{ASCIIString}()                                                 # and identify the number of drifters
+trkfiles = Set{UTF8String}()                                                  # and identify the number of drifters
 for (a, fila) in enumerate(driftfiles)                                        # associated with these trajectories
   push!(trkfiles, fila[1:24])
 end

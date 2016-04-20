@@ -20,7 +20,7 @@ xyzzy = ARGS[1]*".gif"
 if isfile(xyzzy)  write(STDERR, "ERROR : $xyzzy already exists\n") ; exit(-1)  end
 
 count = SKIP + 1                                                              # identify all simulated drifter files in
-tmpfiles = Array(ASCIIString, 0)                                              # the current dir but skip every SKIP+1
+tmpfiles = Array(UTF8String, 0)                                               # the current dir but skip every SKIP+1
 driftfiles = filter(x -> (contains(x, ARGS[1]*".traj") &&                     # file in a driftfiles list
                          !contains(x,           ".nc") &&
                          !contains(x,         "plot.")), readdir("."))

@@ -14,9 +14,9 @@ if size(ARGS) != (1,)
   exit(1)
 end
 
-lins = Array(ASCIIString, 1)                                                  # initialize some arrays with the first entry undefined
-buoy = Array(ASCIIString, 1)                                                  # and starting with the second entry, store new tracks
-jday = Array(ASCIIString, 1)
+lins = Array(UTF8String, 1)                                                   # initialize some arrays with the first entry undefined
+buoy = Array(UTF8String, 1)                                                   # and starting with the second entry, store new tracks
+jday = Array(UTF8String, 1)
 
 n = 0 ; i = START
 fpa = My.ouvre(ARGS[1], "r")
@@ -36,9 +36,9 @@ if (float(jday[START][1:4]) > 2009)
     close(fpb)
 end
 
-    lins = Array(ASCIIString, 1) ; push!(lins, line)                          # then reset arrays with the new starting track line
-    buoy = Array(ASCIIString, 1) ; push!(buoy, vars[1])
-    jday = Array(ASCIIString, 1) ; push!(jday, My.dateadd("1950-01-01-0000", float(vars[4]), "dy"))
+    lins = Array(UTF8String, 1) ; push!(lins, line)                           # then reset arrays with the new starting track line
+    buoy = Array(UTF8String, 1) ; push!(buoy, vars[1])
+    jday = Array(UTF8String, 1) ; push!(jday, My.dateadd("1950-01-01-0000", float(vars[4]), "dy"))
     n += 1 ; i = START
   end
   i += 1

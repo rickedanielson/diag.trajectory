@@ -26,6 +26,14 @@ wrkt ; cd all
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib_remainder"
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder"
 
+# further split the in situ cal/val observations by location and store files in an insitu dir
+wrkt ; mkdir insitu
+       sort -k2,2 -k3,3 -k1,1 all/buoydata_1993_2014_drogON.asc.nonmdt > buoydata_1993_2014_drogON.asc.nonmdt.sort
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.split.location.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali? ::: buoydata_1993_2014_drogON.asc.nonmdt.sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       cd insitu ; ls -1 ins* | grep -v Glob > z.list ; cd .. ; wc insitu/z.list
+       rm buoydata_1993_2014_drogON.asc.nonmdt.sort
+
 # create local links to all analysis data files and example ncdumps too
 wrkt ; mkdir v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_geostrophic v2.0_global_025_deg_total_15m v2.0_global_025_deg_total_hs
        cd /home/cercache/users/rdaniels/work/workt/v2.0_global_025_deg_ekman_15m   ; jjj diag.trajectory.drifters.links.jl /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/ekman_15m
@@ -45,14 +53,24 @@ wrkt ; mkdir ncdump
        ncdump   v2.0_global_025_deg_total_15m/20120901000000-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v02.0-fv01.0.nc   > ncdump/v2.0_global_025_deg_total_15m
        ncdump    v2.0_global_025_deg_total_hs/20120901000000-GLOBCURRENT-L4-CUReul_hs-ALT_SUM-v02.0-fv01.0.nc    > ncdump/v2.0_global_025_deg_total_hs
 
-# further split the in situ cal/val observations by location and store files in an insitu dir
-wrkt ; mkdir insitu
-       sort -k2,2 -k3,3 -k1,1 all/buoydata_1993_2014_drogON.asc.nonmdt > buoydata_1993_2014_drogON.asc.nonmdt.sort
-       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.split.location.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali? ::: buoydata_1993_2014_drogON.asc.nonmdt.sort > commands
+# assemble a large third dataset for analysis evaulation (with respect to the 2.0_valid_remainder in situ obs)
+wrkt ; cd all ; jjj eulerian.evaluation.assemble.insitu.jl buoydata_1993_2014_drogON.asc.nonmdt buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder
+       sort        all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs    > buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.sort
+       split -l 321644 buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.sort buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/eulerian.evaluation.assemble.analyses.jl ::: buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs?? ::: v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_geostrophic v2.0_global_025_deg_total_15m v2.0_global_025_deg_total_hs | grep 025 | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
-       cd insitu ; ls -1 ins* | grep -v OHF > z.list ; cd .. ; wc insitu/z.list
-       rm buoydata_1993_2014_drogON.asc.nonmdt.sort
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs??.v2.0_global_025_deg_ekman_15m   | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.v2.0_global_025_deg_ekman_15m
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs??.v2.0_global_025_deg_ekman_hs    | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.v2.0_global_025_deg_ekman_hs
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs??.v2.0_global_025_deg_geostrophic | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.v2.0_global_025_deg_geostrophic
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs??.v2.0_global_025_deg_total_15m   | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.v2.0_global_025_deg_total_15m
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs??.v2.0_global_025_deg_total_hs    | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.v2.0_global_025_deg_total_hs
+       wc all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.*
+       rm commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs*
 
+# perform an initial eight-analysis evaulation, but without calibration (versus the 2.0_valid_remainder obs)
+wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/eulerian.evaluation.versus.insitu.jl all/all.flux.daily.locate_2.0_valid_remainder_obs ::: shfx lhfx wspd airt sstt shum | grep flux | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       rm commands ; cd all ; cat *shfx.summ *lhfx.summ *wspd.summ *airt.summ *sstt.summ *shum.summ
 
 
 
