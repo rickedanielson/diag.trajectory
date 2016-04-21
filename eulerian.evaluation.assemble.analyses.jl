@@ -25,7 +25,7 @@ ARGS[2] == "v2.0_global_025_deg_total_15m"   && (vars[UCUR] =    "eastward_euler
 ARGS[2] == "v2.0_global_025_deg_total_hs"    && (vars[UCUR] =    "eastward_eulerian_current_velocity" ; vars[VCUR] =    "northward_eulerian_current_velocity")
 
 ARGS[2] == "v2.0_global_025_deg_ekman_15m"   && (tail = "0000-GLOBCURRENT-L4-CURekm_15m-ERAWS_EEM-v02.0-fv01.0.nc")
-ARGS[2] == "v2.0_global_025_deg_ekman_hs"    && (tail = "0000-GLOBCURRENT-L4-CURekm_15m-ERAWS_EEM-v02.0-fv01.0.nc")
+ARGS[2] == "v2.0_global_025_deg_ekman_hs"    && (tail = "0000-GLOBCURRENT-L4-CURekm_hs-ERAWS_EEM-v02.0-fv01.0.nc")
 ARGS[2] == "v2.0_global_025_deg_geostrophic" && (tail = "0000-GLOBCURRENT-L4-CURgeo_0m-ALT_OI-v02.0-fv01.0.nc")
 ARGS[2] == "v2.0_global_025_deg_total_15m"   && (tail = "0000-GLOBCURRENT-L4-CUReul_15m-ALT_SUM-v02.0-fv01.0.nc")
 ARGS[2] == "v2.0_global_025_deg_total_hs"    && (tail = "0000-GLOBCURRENT-L4-CUReul_hs-ALT_SUM-v02.0-fv01.0.nc")

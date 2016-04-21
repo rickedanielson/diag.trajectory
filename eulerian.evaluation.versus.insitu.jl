@@ -1,6 +1,6 @@
 #=
  = Report on simple metrics of comparison (bias and RMSE) relative to drifters.
- = Rescaling GlobCurrent velocity prior to comparison permits a simple evaluation
+ = Rescaling current velocity prior to comparison permits a simple evaluation
  = of the impact of rescaling - RD April 2016.
  =#
 
@@ -64,8 +64,8 @@ for a = 1:numb, b = 1:dirn                                                    # 
 end
 resa = mean(datc, 2)
 resb =  std(datc, 2)
-@printf("diff  mean %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %d %s\n", resa[1], resa[2], resa[3], resa[4], resa[5], resa[6], numb, ARGS[2])
-@printf("diff stdev %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %d %s\n", resb[1], resb[2], resb[3], resb[4], resb[5], resb[6], numb, ARGS[2])
+@printf("diff  mean %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %d %s\n", resa[1], resa[2], resa[3], resa[4], resa[5], resa[6], numb, ARGS[2])
+@printf("diff stdev %10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %d %s\n", resb[1], resb[2], resb[3], resb[4], resb[5], resb[6], numb, ARGS[2])
 
 close(fpa)
 for a = 1:dirn                                                                # then close this set of files
@@ -75,7 +75,7 @@ end
 if CALIB == 0  tail = ".summ"  end
 if CALIB == 1  tail = ".sumc"  end
 fpb = My.ouvre(ARGS[1] * "." * ARGS[2] * tail, "w")
-form = @sprintf("%10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %d %s\n", resa[1], resa[2], resa[3], resa[4], resa[5], resa[6], numb, ARGS[2]) ; write(fpb, form)
-form = @sprintf("%10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %d %s\n", resb[1], resb[2], resb[3], resb[4], resb[5], resb[6], numb, ARGS[2]) ; write(fpb, form)
+form = @sprintf("%10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %d %s\n", resa[1], resa[2], resa[3], resa[4], resa[5], resa[6], numb, ARGS[2]) ; write(fpb, form)
+form = @sprintf("%10.3f %10.3f %10.3f %10.3f %10.3f %10.3f %d %s\n", resb[1], resb[2], resb[3], resb[4], resb[5], resb[6], numb, ARGS[2]) ; write(fpb, form)
 close(fpb)
 exit(0)
