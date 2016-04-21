@@ -46,7 +46,8 @@ for line in eachline(fpa)                                                     # 
   push!(lins, line)                                                           # and process these once a new date is read
   if i != START && lins[i][1:10] != lins[i-1][1:10]                           # (careful: try introduces new scope)
     stor = fill(MISS, lonn, latn, PARAMS)
-    date = lins[i-1][1:10]
+    if ARGS[2] == "v2.0_global_025_deg_geostrophic"  date = lins[i-1][1:8] * "00"
+    else                                             date = lins[i-1][1:10]  end
     file = ARGS[2] * "/" * date * tail ; println(file)
     if isfile(file)
       for a = 1:PARAMS
@@ -65,15 +66,15 @@ for line in eachline(fpa)                                                     # 
       end
     end
 
-    for a = START:i - 1                                                       # echo the ICOADS lines, but with analysis
-      vals = split(lins[a])                                                   # data replacing some variables
+    for a = START:i - 1                                                       # echo the drifter data lines, but with analysis
+      vals = split(lins[a])                                                   # velocity replacing drifter velocity
       lat = float(vals[2])
       lon = float(vals[3])
       if ARGS[2] == "v2.0_global_025_deg_geostrophic"  lon <    0 && (lon += 360) ; lon > 360 && (lon -= 360)
       else                                             lon < -180 && (lon += 360) ; lon > 180 && (lon -= 360)  end
       dellat, indlat = findmin(abs(lats - lat))
       dellon, indlon = findmin(abs(lons - lon))
-      form = @sprintf("%s %11.5f %11.5f %s\n", lins[a][1:92], stor[indlon,indlat,UCUR], stor[indlon,indlat,VCUR], lins[a][118:end])
+      form = @sprintf("%s %11.5f %11.5f %s", lins[a][1:92], stor[indlon,indlat,UCUR], stor[indlon,indlat,VCUR], lins[a][118:end])
       write(fpb, form)
     end
     lins = Array(UTF8String, 1) ; push!(lins, line)                           # then reset arrays with the new starting line
@@ -83,7 +84,8 @@ for line in eachline(fpa)                                                     # 
 end
 
 stor = fill(MISS, lonn, latn, PARAMS)                                         # write the last set of dates
-date = lins[i-1][1:10]
+if ARGS[2] == "v2.0_global_025_deg_geostrophic"  date = lins[i-1][1:8] * "00"
+else                                             date = lins[i-1][1:10]  end
 file = ARGS[2] * "/" * date * tail ; println(file)
 if isfile(file)
   for a = 1:PARAMS
@@ -102,15 +104,15 @@ if isfile(file)
   end
 end
 
-for a = START:i - 1                                                           # echo the ICOADS lines, but with analysis
-  vals = split(lins[a])                                                       # data replacing some variables
+for a = START:i - 1                                                           # echo the drifter data lines, but with analysis
+  vals = split(lins[a])                                                       # velocity replacing drifter velocity
   lat = float(vals[2])
   lon = float(vals[3])
   if ARGS[2] == "v2.0_global_025_deg_geostrophic"  lon <    0 && (lon += 360) ; lon > 360 && (lon -= 360)
   else                                             lon < -180 && (lon += 360) ; lon > 180 && (lon -= 360)  end
   dellat, indlat = findmin(abs(lats - lat))
   dellon, indlon = findmin(abs(lons - lon))
-  form = @sprintf("%s %11.5f %11.5f %s\n", lins[a][1:92], stor[indlon,indlat,UCUR], stor[indlon,indlat,VCUR], lins[a][118:end])
+  form = @sprintf("%s %11.5f %11.5f %s", lins[a][1:92], stor[indlon,indlat,UCUR], stor[indlon,indlat,VCUR], lins[a][118:end])
   write(fpb, form)
 end
 n += 1

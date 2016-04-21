@@ -18,7 +18,7 @@ fpa = My.ouvre(ARGS[1],          "r")
 fpb = My.ouvre(ARGS[2] * "_obs", "w")
 for line in eachline(fpa)
   vals = split(line)
-  if in((float(vals[5]), float(vals[6])), locs)
+  if in((float(vals[2]), float(vals[3])), locs)
     write(fpb, line)
   end
 end

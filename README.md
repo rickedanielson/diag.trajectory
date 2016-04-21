@@ -32,7 +32,7 @@ wrkt ; mkdir insitu
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.split.location.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali? ::: buoydata_1993_2014_drogON.asc.nonmdt.sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        cd insitu ; ls -1 ins* | grep -v Glob > z.list ; cd .. ; wc insitu/z.list
-       rm buoydata_1993_2014_drogON.asc.nonmdt.sort
+       rm commands buoydata_1993_2014_drogON.asc.nonmdt.sort
 
 # create local links to all analysis data files and example ncdumps too
 wrkt ; mkdir v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_geostrophic v2.0_global_025_deg_total_15m v2.0_global_025_deg_total_hs
@@ -54,9 +54,9 @@ wrkt ; mkdir ncdump
        ncdump    v2.0_global_025_deg_total_hs/20120901000000-GLOBCURRENT-L4-CUReul_hs-ALT_SUM-v02.0-fv01.0.nc    > ncdump/v2.0_global_025_deg_total_hs
 
 # assemble a large third dataset for analysis evaulation (with respect to the 2.0_valid_remainder in situ obs)
-wrkt ; cd all ; jjj eulerian.evaluation.assemble.insitu.jl buoydata_1993_2014_drogON.asc.nonmdt buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder
-       sort        all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs    > buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.sort
-       split -l 321644 buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.sort buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs
+wrkt ; cd all ; jjj eulerian.evaluation.assemble.insitu.jl buoydata_1993_2014_drogON.asc.nonmdt  buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder
+       cd .. ; sort all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs    > buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.sort
+       split -l 171000  buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.sort buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/eulerian.evaluation.assemble.analyses.jl ::: buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs?? ::: v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_geostrophic v2.0_global_025_deg_total_15m v2.0_global_025_deg_total_hs | grep 025 | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs??.v2.0_global_025_deg_ekman_15m   | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.v2.0_global_025_deg_ekman_15m
@@ -68,9 +68,35 @@ wrkt ; cd all ; jjj eulerian.evaluation.assemble.insitu.jl buoydata_1993_2014_dr
        rm commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs*
 
 # perform an initial eight-analysis evaulation, but without calibration (versus the 2.0_valid_remainder obs)
-wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/eulerian.evaluation.versus.insitu.jl all/all.flux.daily.locate_2.0_valid_remainder_obs ::: shfx lhfx wspd airt sstt shum | grep flux | sort > commands
+wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/eulerian.evaluation.versus.insitu.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs ::: ucur vcur | grep flux | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
-       rm commands ; cd all ; cat *shfx.summ *lhfx.summ *wspd.summ *airt.summ *sstt.summ *shum.summ
+       rm commands ; cd all ; cat *ucur.summ *vcur.summ
+
+# return to the cal/val locations to create analysis timeseries (some locations missing too much of this timeseries are later ignored)
+wrks ; sort     all/all.flux.daily.locate_2.0_calib    > all.flux.daily.locate_2.0_calib.sort
+       split -l 401 all.flux.daily.locate_2.0_calib.sort all.flux.daily.locate_2.0_calib.sort
+       sort     all/all.flux.daily.locate_2.0_valid    > all.flux.daily.locate_2.0_valid.sort
+       split -l 400 all.flux.daily.locate_2.0_valid.sort all.flux.daily.locate_2.0_valid.sort
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.jl ::: all.flux.daily.locate_2.0_?ali?.sort?? ::: cfsr erainterim hoaps ifremerflux jofuro merra oaflux seaflux | grep flux | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       rm commands all.flux.daily.locate_2.0_?ali?.sor*
+
+# verify that each subdir contains the expected number of files (e.g., 4010 + 3578 = 7588 files with 3745 dates)
+wrks ; cd cfsr        ; ls -1 cfs* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd erainterim  ; ls -1 era* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd hoaps       ; ls -1 hoa* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd ifremerflux ; ls -1 ifr* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd merra       ; ls -1 mer* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd oaflux      ; ls -1 oaf* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd seaflux     ; ls -1 sea* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd jofuro      ; ls -1 jof* | grep -v OHF | grep -v .bef | grep -v .aft > z.list ; split -l 1000 z.list z.list ; cd ..
+       wc *[a-z]/z.list
+
+# plot examples of temporal coverage by all analyses (include in situ) at a few locations
+wrks ; xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.available.jl ....45.000...-48.500
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.available.jl ....55.000...-12.500
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.available.jl ....48.750...-12.500
+
 
 
 
