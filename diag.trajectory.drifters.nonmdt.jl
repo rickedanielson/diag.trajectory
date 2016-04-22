@@ -11,8 +11,8 @@ if size(ARGS) != (1,)
   exit(1)
 end
 
-lats = collect( -90.0:0.25:89.75)                                             # the output grid, the days in the month, and
-lons = collect(-180.0:0.25:179.75)
+lats = collect( -79.875:0.25:79.875)                                          # define the target grid
+lons = collect(-179.875:0.25:179.875)
 
 fpa = My.ouvre(ARGS[1],             "r")
 fpb = My.ouvre(ARGS[1] * ".nonmdt", "w")

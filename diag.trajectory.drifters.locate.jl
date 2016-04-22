@@ -11,8 +11,8 @@ if size(ARGS) != (1,)
   exit(1)
 end
 
-lats = collect( -90.0:0.25:89.75)                                             # then define the collocation grid
-lons = collect(-180.0:0.25:179.75)                                            # and initialize the count
+lats = collect( -79.875:0.25:79.875)                                          # then define the collocation grid
+lons = collect(-179.875:0.25:179.875)                                         # and initialize the count
 subs = Set(Array(Tuple{Int64, Int64}, 0))
 numb = zeros(length(lons), length(lats))
 

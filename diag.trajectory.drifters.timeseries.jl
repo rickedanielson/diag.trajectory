@@ -17,7 +17,16 @@ end
 
 buoy = Set(Array(Tuple{Float64, Float64}, 0))                                 # initialize a grid mask that is
 fpa = My.ouvre(ARGS[1], "r") ; lines = readlines(fpa) ; close(fpa)            # true wherever buoys are located
-for line in lines  vals = split(line) ; push!(buoy, (float(vals[2]), float(vals[1])))  end
+if ARGS[2] == "v2.0_global_025_deg_geostrophic"
+  for line in lines
+    vals = split(line)
+    lat = float(vals[1])
+    lon = float(vals[2]) ; lon < 0 && (lon += 360) ; lon > 360 && (lon -= 360)
+    push!(buoy, (lon, lat))
+  end
+else
+  for line in lines  vals = split(line) ; push!(buoy, (float(vals[2]), float(vals[1])))  end
+end
 
 lats =  -79.875:0.25:79.875  ; latn = length(lats)
 lons = -179.875:0.25:179.875 ; lonn = length(lons)
@@ -45,6 +54,7 @@ ARGS[2] == "v2.0_global_025_deg_total_hs"    && (tail =   "0000-GLOBCURRENT-L4-C
 fpn = Array(IOStream, 0)                                                      # open a set of output files
 for a = 1:locn                                                                # at all buoy locations
   (lon, lat) = fend[a]
+  if ARGS[2] == "v2.0_global_025_deg_geostrophic"  lon > 180 && (lon -= 360)  end
   tmp = @sprintf("%9.3f.%9.3f", lat, lon)
   tmq = replace(tmp, " ", ".")
   tmr = "$(ARGS[2])/$(ARGS[2]).$tmq"
