@@ -29,7 +29,7 @@ end
 
 for loc in subs
   (indlat, indlon) = loc
-  line = @sprintf("%8.2f %8.2f %8.0f\n", lats[indlat], lons[indlon], numb[indlon,indlat])
+  line = @sprintf("%8.3f %8.3f %8.0f\n", lats[indlat], lons[indlon], numb[indlon,indlat])
   write(fpb, line)
 end
 

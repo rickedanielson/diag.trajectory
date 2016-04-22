@@ -91,9 +91,9 @@ wrkt ; cd v2.0_global_025_deg_ekman_15m   | ls -1   v2.0_global_025_deg_ekman_15
        wc *[a-z]/z.list
 
 # plot examples of temporal coverage by all analyses (include in situ) at a few locations
-wrkt ; xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.available.jl ....45.000...-48.500
-       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.available.jl ....55.000...-12.500
-       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.available.jl ....48.750...-12.500
+wrkt ; xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....45.000...-48.500
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....55.000...-12.500
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....48.750...-12.500
 
 
 
