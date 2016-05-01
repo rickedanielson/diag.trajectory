@@ -16,11 +16,11 @@ if size(ARGS) != (0,)
   exit(1)
 end
 
-dirs = ["v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
+dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
 dirn = length(dirs)
 
-ucui = 0.01 ; ucus = collect(-10.0 : ucui : 10.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
-vcui = 0.01 ; vcus = collect(-10.0 : vcui : 10.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
+ucui = 0.002 ; ucus = collect(-5.0 : ucui : 5.0) ; ucun = zeros(length(ucus), length(dirs))
+vcui = 0.002 ; vcus = collect(-5.0 : vcui : 5.0) ; vcun = zeros(length(vcus), length(dirs))
 
 function restore(bound::Array{Float64,1}, grid::Array{Float64,2}, pname::UTF8String)
   fname = "histogr." * pname * ".dat"
@@ -58,9 +58,7 @@ for z = 1:PARAMS
              Winston.add(ppp[tpos...], ump[a])
   end
   if z == UCUR
-    tmp = Winston.Legend(.05, .92, Any[ump[1], ump[2], ump[3], ump[4]])
-          Winston.add(ppp[tpos...], tmp)
-    tmp = Winston.Legend(.30, .92, Any[ump[5], ump[6], ump[7], ump[8]])
+    tmp = Winston.Legend(.05, .92, Any[ump[1], ump[2], ump[3]])
           Winston.add(ppp[tpos...], tmp)
   end
 end

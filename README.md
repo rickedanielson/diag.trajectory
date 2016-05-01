@@ -98,11 +98,11 @@ wrkt ; xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drif
        xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....47.375....-9.375
        mv plot.avail.* all/plot.available
 
-RD# plot histograms
-wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.histogram.jl ::: cfsr erainterim hoaps ifremerflux jofuro merra oaflux seaflux ::: z.list | grep flux | sort > commands
+# plot histograms
+wrkt ; echo /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.histogram.jl z.list > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
        rm commands
-       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.histoplot.jl
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.histoplot.jl
        gzip histogr*dat ; mv histogr* all/plot.histogr
 
 # create the forward and backward extrapolated timeseries, but just for the geostrophic component
@@ -111,6 +111,12 @@ wrkt ; cd v2.0_global_025_deg_geostrophic ; ls z.list?? ; cd ..
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        rm commands
 
+# plot extrapolation histograms (forward and backward versus the actual values for assessment of bias in the extrapolation method)
+wrkt ; nohup julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histogram.jl z.list > xcom &
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histoplot.jl v2.0_global_025_deg_geostrophic
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histoplot.jl v2.0_global_025_deg_total_15m
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histoplot.jl v2.0_global_025_deg_total_hs
+       gzip extrapolated.histogr*dat ; mv extrapolated.histogr* all/plot.histogr
 
 
 

@@ -17,13 +17,11 @@ if size(ARGS) != (1,) && size(ARGS) != (2,)
 end
 maxfiles = 9e9 ; size(ARGS) == (2,) && (maxfiles = parse(Int64, ARGS[2]))
 
-dirs = ["v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
+dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
 dirn = length(dirs)
-# CFSR = try  findin(dirs, [  "cfsr"])[1]  catch  0  end
-# JOFU = try  findin(dirs, ["jofuro"])[1]  catch  0  end
 
-ucui = 0.01 ; ucus = collect(-10.0 : ucui : 10.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
-vcui = 0.01 ; vcus = collect(-10.0 : vcui : 10.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
+ucui = 0.002 ; ucus = collect(-5.0 : ucui : 5.0) ; ucun = zeros(length(ucus), length(dirs))
+vcui = 0.002 ; vcus = collect(-5.0 : vcui : 5.0) ; vcun = zeros(length(vcus), length(dirs))
 
 function count(bound::Array{Float64,1}, grid::Array{Float64,2}, now::Array{Float64,1})
   flag = false
@@ -52,12 +50,9 @@ for (a, fila) in enumerate(files)
   for b = 1:TIMS
     for c = 1:dirn
       line = readline(fpn[c]) ; vals = split(line)
-      data[c,UCUR] = float(vals[1])
-      data[c,VCUR] = float(vals[2])
+      data[c,UCUR] = float(vals[10])
+      data[c,VCUR] = float(vals[11])
     end
-
-#   if CFSR > 0  data[CFSR,LHFX]                   = 333  end                 # set expected missing values to be
-#   if JOFU > 0  data[JOFU,AIRT] = data[JOFU,SSTT] = 333  end                 # outside the plotting range
     count(ucus, ucun, data[:,UCUR])
     count(vcus, vcun, data[:,VCUR])
   end
@@ -84,6 +79,10 @@ exit(0)
 
 
 #=
+  CFSR = try  findin(dirs, [  "cfsr"])[1]  catch  0  end
+  JOFU = try  findin(dirs, ["jofuro"])[1]  catch  0  end
+    if CFSR > 0  data[CFSR,LHFX]                   = 333  end                 # set expected missing values to be
+    if JOFU > 0  data[JOFU,AIRT] = data[JOFU,SSTT] = 333  end                 # outside the plotting range
     if float(valb[ 1]) < 50 && (float(vala[ 1]) > 300 || float(valc[ 1]) > 300)
       @show vala ; @show valb ; @show valc  end
     @printf(fpa, "%15.8f\n", grid[a,1])
