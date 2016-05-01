@@ -1,0 +1,77 @@
+#=
+ = Loop through all analyses and plot the binned
+ = sums of all available variables - RD May 2016.
+ =#
+
+using My, Winston
+const UCUR             = 1                              # indecies of all data variables
+const VCUR             = 2
+const PARAMS           = 2
+
+const TIMS             = 3408                           # number in timeseries
+const MISS             = -9999.0                        # generic missing value
+
+if size(ARGS) != (0,) 
+  print("\nUsage: jjj $(basename(@__FILE__))\n\n")
+  exit(1)
+end
+
+dirs = ["v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
+dirn = length(dirs)
+
+ucui = 0.01 ; ucus = collect(-10.0 : ucui : 10.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
+vcui = 0.01 ; vcus = collect(-10.0 : vcui : 10.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
+
+function restore(bound::Array{Float64,1}, grid::Array{Float64,2}, pname::UTF8String)
+  fname = "histogr." * pname * ".dat"
+  fpa = My.ouvre(fname, "r")
+  for (a, vala) in enumerate(bound)
+    line = readline(fpa)
+    (grid[a,1], grid[a,2], grid[a,3]) = float(split(line))
+  end
+  close(fpa)
+end
+
+restore(ucus, ucun, utf8("ucur"))
+restore(vcus, vcun, utf8("vcur"))
+
+ppp = Winston.Table(1,2) ; setattr(ppp, "cellpadding", -0.5)                  # and then create the plots
+for z = 1:PARAMS
+  z == UCUR && (varname =      "a) Zonal Current (ms^{-1})" ; bound = ucus ; grid = ucun ; tpos = (1,1) ; delt = ucui)
+  z == VCUR && (varname = "b) Meridional Current (ms^{-1})" ; bound = vcus ; grid = vcun ; tpos = (1,2) ; delt = vcui)
+
+  bound += 0.5 * delt                                                         # make bound refer to grid midpoints
+  z == UCUR && (xmin = -3.0 ; xmax = 4.0 ; ymin = -3.0 ; ymax = 4.0)          # and locate the plot limits
+  z == VCUR && (xmin = -3.0 ; xmax = 4.0 ; ymin = -3.0 ; ymax = 4.0)
+
+  ump = Array(Any, dirn)
+  cols = [  "red",  "blue", "green"]
+  kynd = ["solid", "solid", "solid"]
+
+  tmp = Winston.FramedPlot(title="$varname", xrange = (xmin,xmax), yrange = (ymin,ymax))
+  ppp[tpos...] = Winston.add(tmp)
+
+  for a = 1:dirn
+    ump[a] = Winston.Curve(bound, grid[:,a], "color", parse(Winston.Colorant, cols[a]))
+             style(ump[a], kind = kynd[a])
+             setattr(ump[a], label = dirs[a])
+             Winston.add(ppp[tpos...], ump[a])
+  end
+  if z == UCUR
+    tmp = Winston.Legend(.05, .92, Any[ump[1], ump[2], ump[3], ump[4]])
+          Winston.add(ppp[tpos...], tmp)
+    tmp = Winston.Legend(.30, .92, Any[ump[5], ump[6], ump[7], ump[8]])
+          Winston.add(ppp[tpos...], tmp)
+  end
+end
+
+xyzzy = "histogr_z.list.png"
+print("writing $xyzzy\n")
+Winston.savefig(ppp, xyzzy, "width", 1700, "height", 1000)
+exit(0)
+
+
+# if ( ARGS[1] ==  "erainterim" || ARGS[1] ==       "hoaps" || ARGS[1] == "ifremerflux" ||
+#      ARGS[1] ==       "merra" || ARGS[1] ==      "oaflux" || ARGS[1] ==     "seaflux" ||
+#     (ARGS[1] ==        "cfsr" &&              z != LHFX)   ||
+#     (ARGS[1] ==      "jofuro" && z != SSTT && z != AIRT))

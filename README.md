@@ -10,9 +10,11 @@ alias wrkt 'cd ~/work/workt; ls'
 
 # copy data then isolate and plot the location of drifters not in the CNES-CLS-2013 MDT
 wrkt ; cd all ; cp /home/cercache/project/globcurrent/data/third-party/insitu/drifters-rio/* .
+       mkdir plot.available plot.histogr plot.locate plot.scatter
        jjj diag.trajectory.drifters.nonmdt.jl buoydata_1993_2014_drogON.asc
        jjj diag.trajectory.drifters.locate.jl buoydata_1993_2014_drogON.asc.nonmdt
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate"
+       mv plot.trajectory.drifters.dots*locate*png plot.locate
 
 # split the drifter data by location into calibration and validation groups
 wrkt ; cd all
@@ -25,6 +27,7 @@ wrkt ; cd all
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid"
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib_remainder"
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder"
+       mv plot.trajectory.drifters.dots*locate*png plot.locate
 
 # further split the in situ cal/val observations by location and store files in an insitu dir
 wrkt ; mkdir insitu
@@ -82,19 +85,31 @@ wrkt ; sort      all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib    > 
        rm commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.sor*
 
 # verify that each subdir contains the expected number of files (e.g., 4339 + 3619 = 7958 files with 3408 dates)
-       cd insitu                          ; ls -1 insitu..????.???..????.??? > z.list ; cd .. ; wc insitu/z.list
-wrkt ; cd v2.0_global_025_deg_ekman_15m   | ls -1   v2.0_global_025_deg_ekman_15m..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
-       cd v2.0_global_025_deg_ekman_hs    | ls -1    v2.0_global_025_deg_ekman_hs..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
-       cd v2.0_global_025_deg_geostrophic | ls -1 v2.0_global_025_deg_geostrophic..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
-       cd v2.0_global_025_deg_total_15m   | ls -1   v2.0_global_025_deg_total_15m..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
-       cd v2.0_global_025_deg_total_hs    | ls -1    v2.0_global_025_deg_total_hs..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
+wrkt ; cd v2.0_global_025_deg_ekman_15m   ; ls -1   v2.0_global_025_deg_ekman_15m..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd v2.0_global_025_deg_ekman_hs    ; ls -1    v2.0_global_025_deg_ekman_hs..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd v2.0_global_025_deg_geostrophic ; ls -1 v2.0_global_025_deg_geostrophic..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd v2.0_global_025_deg_total_15m   ; ls -1   v2.0_global_025_deg_total_15m..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
+       cd v2.0_global_025_deg_total_hs    ; ls -1    v2.0_global_025_deg_total_hs..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
        wc *[a-z]/z.list
 
 # plot examples of temporal coverage by all analyses (include in situ) at a few locations
-wrkt ; xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....45.000...-48.500
-       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....55.000...-12.500
-       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....48.750...-12.500
+wrkt ; xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....44.875...-45.125
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....55.625...-10.875
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.available.jl ....47.375....-9.375
+       mv plot.avail.* all/plot.available
 
+RD# plot histograms
+wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.histogram.jl ::: cfsr erainterim hoaps ifremerflux jofuro merra oaflux seaflux ::: z.list | grep flux | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
+       rm commands
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.histoplot.jl
+       gzip histogr*dat ; mv histogr* all/plot.histogr
+
+# create the forward and backward extrapolated timeseries, but just for the geostrophic component
+wrkt ; cd v2.0_global_025_deg_geostrophic ; ls z.list?? ; cd ..
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.jl v2.0_global_025_deg_geostrophic ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       rm commands
 
 
 
