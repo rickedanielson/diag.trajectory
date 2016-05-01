@@ -24,11 +24,11 @@ if size(ARGS) != (1,)
   exit(1)
 end
 
-dirs = ["v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
+dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
 dirn = length(dirs)
 
-ucui = 0.01 ; ucus = collect(-10.0 : ucui : 10.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
-vcui = 0.01 ; vcus = collect(-10.0 : vcui : 10.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
+ucui = 0.002 ; ucus = collect(-5.0 : ucui : 5.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
+vcui = 0.002 ; vcus = collect(-5.0 : vcui : 5.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
 
 function restore(bound::Array{Float64,1}, grid::Array{Float64,3}, pname::UTF8String)
   fname = "extrapolated.histogr." * pname * ".dat"
@@ -36,7 +36,7 @@ function restore(bound::Array{Float64,1}, grid::Array{Float64,3}, pname::UTF8Str
   for (a, vala) in enumerate(bound)
     for (b, valb) in enumerate(bound)
       line = readline(fpa)
-      (grid[b,a,1], grid[b,a,2], grid[b,a,3]) = float(split(line))
+      (grid[b,a,1], grid[b,a,2], grid[b,a,3], grid[b,a,4], grid[b,a,5]) = float(split(line))
     end
   end
   close(fpa)
@@ -61,9 +61,11 @@ function point(bound::Array{Float64,1}, grid::Array{Float64,3}, plotind::Int64)
   return(xpts, ypts, zpts)
 end
 
-ARGS[1] == "v2.0_global_025_deg_geostrophic" && (plotind = 1 ; plotitle = "Geostrophic")
-ARGS[1] == "v2.0_global_025_deg_total_15m"   && (plotind = 2 ; plotitle = "Total 15-m")
-ARGS[1] == "v2.0_global_025_deg_total_hs"    && (plotind = 3 ; plotitle = "Total Surface")
+ARGS[1] == "v2.0_global_025_deg_ekman_15m"   && (plotind = 1 ; plotitle = "Ekman 15-m")
+ARGS[1] == "v2.0_global_025_deg_ekman_hs"    && (plotind = 2 ; plotitle = "Ekman Surface")
+ARGS[1] == "v2.0_global_025_deg_geostrophic" && (plotind = 3 ; plotitle = "Geostrophic")
+ARGS[1] == "v2.0_global_025_deg_total_15m"   && (plotind = 4 ; plotitle = "Total 15-m")
+ARGS[1] == "v2.0_global_025_deg_total_hs"    && (plotind = 5 ; plotitle = "Total Surface")
 
 ppp = Winston.Table(1,2) ; setattr(ppp, "cellpadding", -0.5)                  # and then create the scatterplots
 for z = 1:PARAMS

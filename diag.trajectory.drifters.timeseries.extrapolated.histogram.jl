@@ -25,13 +25,11 @@ if size(ARGS) != (1,) && size(ARGS) != (2,)
 end
 maxfiles = 9e9 ; size(ARGS) == (2,) && (maxfiles = parse(Int64, ARGS[2]))
 
-dirs = ["v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
+dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
 dirn = length(dirs)
-# CFSR = try  findin(dirs, [  "cfsr"])[1]  catch  0  end
-# JOFU = try  findin(dirs, ["jofuro"])[1]  catch  0  end
 
-ucui = 0.01 ; ucus = collect(-10.0 : ucui : 10.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
-vcui = 0.01 ; vcus = collect(-10.0 : vcui : 10.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
+ucui = 0.002 ; ucus = collect(-5.0 : ucui : 5.0) ; ucun = zeros(length(ucus), length(ucus), length(dirs))
+vcui = 0.002 ; vcus = collect(-5.0 : vcui : 5.0) ; vcun = zeros(length(vcus), length(vcus), length(dirs))
 
 function count(bound::Array{Float64,1}, grid::Array{Float64,3}, bef::Array{Float64,1}, now::Array{Float64,1}, aft::Array{Float64,1})
   flag = false
@@ -69,12 +67,9 @@ for (a, fila) in enumerate(files)
       line = readline(fpna[c]) ; vala = split(line)
       line = readline(fpnb[c]) ; valb = split(line)
       line = readline(fpnc[c]) ; valc = split(line)
-      data[c,UCUR,BEF] = float(vala[1]) ; data[c,UCUR,NOW] = float(valb[1]) ; data[c,UCUR,AFT] = float(valc[1])
-      data[c,VCUR,BEF] = float(vala[2]) ; data[c,VCUR,NOW] = float(valb[2]) ; data[c,VCUR,AFT] = float(valc[2])
+      data[c,UCUR,BEF] = float(vala[10]) ; data[c,UCUR,NOW] = float(valb[10]) ; data[c,UCUR,AFT] = float(valc[11])
+      data[c,VCUR,BEF] = float(vala[11]) ; data[c,VCUR,NOW] = float(valb[11]) ; data[c,VCUR,AFT] = float(valc[11])
     end
-
-#   if CFSR > 0  data[CFSR,LHFX,:]                     = [3333 3333 3333] end  # set expected missing values to be
-#   if JOFU > 0  data[JOFU,AIRT,:] = data[JOFU,SSTT,:] = [3333 3333 3333] end  # outside the plotting range
     count(ucus, ucun, data[:,UCUR,BEF], data[:,UCUR,NOW], data[:,UCUR,AFT])
     count(vcus, vcun, data[:,VCUR,BEF], data[:,VCUR,NOW], data[:,VCUR,AFT])
   end
@@ -93,7 +88,8 @@ function store(bound::Array{Float64,1}, grid::Array{Float64,3}, pname::UTF8Strin
   fpa = My.ouvre(fname, "w")
   for (a, vala) in enumerate(bound)
     for (b, valb) in enumerate(bound)
-      @printf(fpa, "%15.8f %15.8f %15.8f\n", grid[b,a,1], grid[b,a,2], grid[b,a,3])
+      @printf(fpa, "%15.8f %15.8f %15.8f %15.8f %15.8f\n",
+        grid[b,a,1], grid[b,a,2], grid[b,a,3], grid[b,a,4], grid[b,a,5])
     end
   end
   close(fpa)
@@ -102,3 +98,11 @@ end
 store(ucus, ucun, utf8("ucur"))
 store(vcus, vcun, utf8("vcur"))
 exit(0)
+
+
+#=
+  CFSR = try  findin(dirs, [  "cfsr"])[1]  catch  0  end
+  JOFU = try  findin(dirs, ["jofuro"])[1]  catch  0  end
+    if CFSR > 0  data[CFSR,LHFX,:]                     = [3333 3333 3333] end  # set expected missing values to be
+    if JOFU > 0  data[JOFU,AIRT,:] = data[JOFU,SSTT,:] = [3333 3333 3333] end  # outside the plotting range
+=#

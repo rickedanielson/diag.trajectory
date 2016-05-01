@@ -68,7 +68,8 @@ function store(bound::Array{Float64,1}, grid::Array{Float64,2}, pname::UTF8Strin
   fname = "histogr." * pname * ".dat"
   fpa = My.ouvre(fname, "w")
   for (a, vala) in enumerate(bound)
-    @printf(fpa, "%15.8f %15.8f %15.8f\n", grid[a,1], grid[a,2], grid[a,3])
+    @printf(fpa, "%15.8f %15.8f %15.8f %15.8f %15.8f\n",
+      grid[a,1], grid[a,2], grid[a,3], grid[a,4], grid[a,5])
   end
   close(fpa)
 end

@@ -27,7 +27,7 @@ function restore(bound::Array{Float64,1}, grid::Array{Float64,2}, pname::UTF8Str
   fpa = My.ouvre(fname, "r")
   for (a, vala) in enumerate(bound)
     line = readline(fpa)
-    (grid[a,1], grid[a,2], grid[a,3]) = float(split(line))
+    (grid[a,1], grid[a,2], grid[a,3], grid[a,4], grid[a,5]) = float(split(line))
   end
   close(fpa)
 end
@@ -45,8 +45,8 @@ for z = 1:PARAMS
   z == VCUR && (xmin = -3.0 ; xmax = 4.0 ; ymin = -3.0 ; ymax = 4.0)
 
   ump = Array(Any, dirn)
-  cols = [  "red",  "blue", "green"]
-  kynd = ["solid", "solid", "solid"]
+  cols = [  "red",  "blue", "green", "orange",    "red"]
+  kynd = ["solid", "solid", "solid",  "solid", "dashed"]
 
   tmp = Winston.FramedPlot(title="$varname", xrange = (xmin,xmax), yrange = (ymin,ymax))
   ppp[tpos...] = Winston.add(tmp)
