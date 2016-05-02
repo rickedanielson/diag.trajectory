@@ -10,7 +10,7 @@ alias wrkt 'cd ~/work/workt; ls'
 
 # copy data then isolate and plot the location of drifters not in the CNES-CLS-2013 MDT
 wrkt ; cd all ; cp /home/cercache/project/globcurrent/data/third-party/insitu/drifters-rio/* .
-       mkdir plot.available plot.histogr plot.locate plot.scatter
+       mkdir plot.available plot.histogr plot.locate
        jjj diag.trajectory.drifters.nonmdt.jl buoydata_1993_2014_drogON.asc
        jjj diag.trajectory.drifters.locate.jl buoydata_1993_2014_drogON.asc.nonmdt
        xvfb-run -a grads -blc "diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate"
@@ -70,7 +70,7 @@ wrkt ; cd all ; jjj eulerian.evaluation.assemble.insitu.jl buoydata_1993_2014_dr
        wc all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs.*
        rm commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs*
 
-# perform an initial eight-analysis evaulation, but without calibration (versus the 2.0_valid_remainder obs)
+# perform an initial analysis evaulation, but without calibration (and including all components, versus the 2.0_valid_remainder obs)
 wrkt ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/eulerian.evaluation.versus.insitu.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid_remainder_obs ::: ucur vcur | grep buoy | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        rm commands ; cd all ; cat *ucur.summ *vcur.summ
@@ -105,7 +105,7 @@ wrkt ; echo /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseri
        xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.histoplot.jl
        gzip histogr*dat ; mv histogr* all/plot.histogr
 
-# create the forward and backward extrapolated timeseries, but just for the geostrophic component
+RD # create the forward and backward extrapolated timeseries (separately for the geostrophic and Ekman components and combined for the total)
 wrkt ; cd v2.0_global_025_deg_geostrophic ; ls z.list?? ; cd ..
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.jl v2.0_global_025_deg_geostrophic ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
