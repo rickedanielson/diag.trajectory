@@ -60,7 +60,7 @@ for fila in files
   end
 
   for a = 1:PARS                                                              # simultaneously extrap from BEF and AFT
-    for b = 1+outer:TIMS-outer
+    for b = 1+outer:DAYS-outer
       tmp = vec(data[b-inner:b+inner,NOW,a])
       if all(-333 .< tmp .< 333)
         tmpmax = maximum(tmp)
@@ -78,7 +78,7 @@ for fila in files
 
   for a = 1:PARS                                                              # set to missing the last few AFT
     for b = 0:EXTRA+EXTRB                                                     # extrapolations (not defined above)
-      data[TIMS-b,AFT,a] = MISS
+      data[DAYS-b,AFT,a] = MISS
     end
   end
 
