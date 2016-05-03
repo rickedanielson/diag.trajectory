@@ -84,7 +84,7 @@ wrkt ; sort      all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib    > 
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        rm commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.sor*
 
-# verify that each subdir contains the expected number of files (e.g., 4339 + 3619 = 7958 files with 3408 dates)
+# verify that each subdir contains the expected number of files (e.g., 4357 + 3640 = 7997 files with 3408 dates)
 wrkt ; cd v2.0_global_025_deg_ekman_15m   ; ls -1   v2.0_global_025_deg_ekman_15m..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
        cd v2.0_global_025_deg_ekman_hs    ; ls -1    v2.0_global_025_deg_ekman_hs..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
        cd v2.0_global_025_deg_geostrophic ; ls -1 v2.0_global_025_deg_geostrophic..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
@@ -108,18 +108,13 @@ wrkt ; echo /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseri
 # create the forward and backward extrapolated timeseries (separately for the geostrophic and Ekman components and combined for the total)
 wrkt ; cd v2.0_global_025_deg_geostrophic ; ls z.list?? ; cd ..
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.ekman.jl ::: v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
-       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
-       rm commands
-       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.geostrophic.jl v2.0_global_025_deg_geostrophic ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.geostrophic.jl v2.0_global_025_deg_geostrophic ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort >> commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        rm commands
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.total.jl v2.0_global_025_deg_geostrophic v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_total_15m ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.total.jl v2.0_global_025_deg_geostrophic v2.0_global_025_deg_ekman_hs v2.0_global_025_deg_total_hs ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort >> commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        rm commands
-       cd v2.0_global_025_deg_total_15m   ; ls -1   v2.0_global_025_deg_total_15m..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
-       cd v2.0_global_025_deg_total_hs    ; ls -1    v2.0_global_025_deg_total_hs..????.???..????.??? > z.list ; split -l 1000 z.list z.list ; cd ..
-RD     wc *[a-z]/z.list
 
 # plot extrapolation histograms (forward and backward versus the actual values for assessment of bias in the extrapolation method)
 wrkt ; nohup julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histogram.jl z.list > xcom &
@@ -128,7 +123,32 @@ wrkt ; nohup julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.t
        xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histoplot.jl v2.0_global_025_deg_geostrophic
        xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histoplot.jl v2.0_global_025_deg_total_15m
        xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histoplot.jl v2.0_global_025_deg_total_hs
-       gzip extrapolated.histogr*dat ; mv extrapolated.histogr* all/plot.histogr
+RD     gzip extrapolated.histogr*dat ; mv extrapolated.histogr* all/plot.histogr
+
+# identify the subset of drifter cal/val locations for which analyses are also available for much of 2001-2007 (call these the collocations)
+wrkt ; split -l 400 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib
+       split -l 400 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid
+RD!    parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.nfft.jl ::: buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali??? ::: ucur vcur | grep drift | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib??.ucur.got2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib??.ucur.not2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.not2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid??.ucur.got2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid??.ucur.not2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.not2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib??.vcur.got2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.got2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib??.vcur.not2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.not2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid??.vcur.got2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.got2000
+       cat buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid??.vcur.not2000 | sort > all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.not2000
+
+# assemble the insitu and analysis data for a triple collocation cal/val (such a slow analysis assembly needs profiling!)
+wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/analysis.evaluation.assemble.insitu.jl all/all.flux.daily    ::: all/all.flux.daily.locate_2.0_?ali?.????.got2000          | grep flux | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/coads.gts.ncepnrt.heat.flux.colloc.discrete.source.jl        ::: all/all.flux.daily.locate_2.0_?ali?.????.got2000_obs      | grep flux | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
+       rm commands
+
+
+
+
 
 
 
