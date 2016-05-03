@@ -105,11 +105,12 @@ wrkt ; echo /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseri
        xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.histoplot.jl
        gzip histogr*dat ; mv histogr* all/plot.histogr
 
-RD # create the forward and backward extrapolated timeseries (separately for the geostrophic and Ekman components and combined for the total)
+# create the forward and backward extrapolated timeseries (separately for the geostrophic and Ekman components and combined for the total)
 wrkt ; cd v2.0_global_025_deg_geostrophic ; ls z.list?? ; cd ..
-       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.jl v2.0_global_025_deg_geostrophic ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.ekman.jl ::: v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_ekman_hs ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        rm commands
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.geostrophic.jl v2.0_global_025_deg_geostrophic ::: z.listaa z.listab z.listac z.listad z.listae z.listaf z.listag z.listah | grep drift | sort > commands
 
 # plot extrapolation histograms (forward and backward versus the actual values for assessment of bias in the extrapolation method)
 wrkt ; nohup julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.extrapolated.histogram.jl z.list > xcom &

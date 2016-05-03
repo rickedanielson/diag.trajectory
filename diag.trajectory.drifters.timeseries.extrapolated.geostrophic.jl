@@ -16,7 +16,7 @@ const AFT              = 3
 const SRCS             = 3
 
 const EXTRA            = 9                              # number of points used for extrapolation
-const EXTRB            = 2                              # number of points in gap between EXTRA and target
+const EXTRB            = 4                              # number of points in bracketing gaps between EXTRA and bef/aft targets
 const TIMS             = 3408                           # number in timeseries
 const DAYS             = 852                            # days in timeseries (TIMS/4)
 const MISS             = -9999.0                        # generic missing value
@@ -26,11 +26,11 @@ if size(ARGS) != (2,)
   exit(1)
 end
 
-inner = div(EXTRA - 1, 2)
-outer = div(EXTRA + 1, 2)
+inner = div(EXTRA         - 1, 2)
+outer = div(EXTRA + EXTRB + 1, 2)
 dats = Array(UTF8String, TIMS)
 datt = Array(Float64,    TIMS, SRCS, PARS)
-datb = Array(Float64,    DAYS, SRCS, PARS)
+data = Array(Float64,    DAYS, SRCS, PARS)
 
 fpa = My.ouvre("$(ARGS[1])/$(ARGS[2])", "r")                                  # loop through the list of locations
 files = readlines(fpa) ; close(fpa)                                           # and process each timeseries
@@ -45,36 +45,51 @@ for fila in files
     dats[a]          =       vals[1]
   end
 
-  for c = 1:PARS                                                              # retain the daily geostrophy timestep
+  for a = 1:PARS                                                              # retain the daily geostrophy timestep
     for b = 1:SRCS                                                            # (as in the source data)
-      for a = 1:DAYS
-        data[a,b,c] = datt[4*a,b,c]
+      for c = 1:DAYS
+        data[c,b,a] = datt[4*c,b,a]
       end
     end
   end
 
-  for b = 1:PARS                                                              # set to missing the first few BEF
-    for a = 1:EXTRA+1                                                         # extrapolations (not defined below)
-      data[a,BEF,b] = MISS
+  for a = 1:PARS                                                              # set to missing the first few BEF
+    for b = 1:EXTRA+EXTRB+1                                                   # extrapolations (not defined below)
+      data[b,BEF,a] = MISS
     end
   end
 
-#=for a = 1:PARS                                                              # simultaneously extrap from BEF and AFT
+  for a = 1:PARS                                                              # simultaneously extrap from BEF and AFT
     for b = 1+outer:TIMS-outer
-      tmp = vec(data[a,NOW,b-inner:b+inner])
-      if all(-333 .< tmp .< 3333)
+      tmp = vec(data[b-inner:b+inner,NOW,a])
+      if all(-333 .< tmp .< 333)
+        tmpmax = maximum(tmp)
+        tmpmin = minimum(tmp)
         itp = interpolate(tmp, BSpline(Quadratic(Line())), OnCell())
-        data[a,BEF,b+outer] = itp[10]
-        data[a,AFT,b-outer] = itp[0]
+        tmpbef = itp[EXTRA+1+EXTRB/2] ; tmpbef > tmpmax && (tmpbef = tmpmax) ; tmpbef < tmpmin && (tmpbef = tmpmin)
+        tmpaft = itp[       -EXTRB/2] ; tmpaft > tmpmax && (tmpaft = tmpmax) ; tmpaft < tmpmin && (tmpaft = tmpmin)
+        data[b+outer,BEF,a] = tmpbef
+        data[b-outer,AFT,a] = tmpaft
       else
-        data[a,BEF,b+outer] = data[a,AFT,b-outer] = MISS
+        data[b+outer,BEF,a] = data[b-outer,AFT,a] = MISS
       end
     end
-  end =#
+  end
 
   for a = 1:PARS                                                              # set to missing the last few AFT
-    for b = 0:EXTRA                                                           # extrapolations (not defined above)
-      data[a,AFT,TIMS-b] = MISS
+    for b = 0:EXTRA+EXTRB                                                     # extrapolations (not defined above)
+      data[TIMS-b,AFT,a] = MISS
+    end
+  end
+
+  for a = 1:PARS                                                              # map from daily back to 6-hourly
+    for b = 1:SRCS
+      for c = 1:DAYS
+        datt[4*c  ,b,a] = data[c,b,a]
+        datt[4*c-1,b,a] = data[c,b,a]
+        datt[4*c-2,b,a] = data[c,b,a]
+        datt[4*c-3,b,a] = data[c,b,a]
+      end
     end
   end
 
@@ -85,9 +100,9 @@ for fila in files
   (lll, lat, lon) = split(replace(fila, r"[\.]{2,}", " "))
   for a = 1:TIMS
     formb = @sprintf("%10s %10.5f %10.5f   99999999     99999  9 -9999.00000 -9999.00000 -9999.00000 %11.5f %11.5f\n",
-      dats[a], float(lat), float(lon), datt[UCUR,BEF,a], datt[VCUR,BEF,a])
+      dats[a], float(lat), float(lon), datt[a,BEF,UCUR], datt[a,BEF,VCUR])
     formc = @sprintf("%10s %10.5f %10.5f   99999999     99999  9 -9999.00000 -9999.00000 -9999.00000 %11.5f %11.5f\n",
-      dats[a], float(lat), float(lon), datt[UCUR,AFT,a], datt[VCUR,AFT,a])
+      dats[a], float(lat), float(lon), datt[a,AFT,UCUR], datt[a,AFT,VCUR])
     write(fpb, formb)
     write(fpc, formc)
   end
