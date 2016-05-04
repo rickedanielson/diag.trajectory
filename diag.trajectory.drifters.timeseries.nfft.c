@@ -10,8 +10,9 @@
 #ifdef HAVE_COMPLEX_H
 #include <complex.h>
 #endif
-#include "nfft3util.h"
-#include "nfft3.h"
+/* #include "nfft3util.h" */
+#define NFFT_PRECISION_SINGLE
+#include "/home1/homedir1/perso/rdaniels/soft/nfft/include/nfft3mp.h"
 
 #define LEN        100
 #define LOTS       500
@@ -54,7 +55,7 @@ main (int argc, char *argv[])
     nfft_init_1d(&p, TIMES, obsnum);                                          /* initialize a one-dimensional plan */
     for (a = 0; a < obsnum; a++)                                              /* and pass the [-0.5,0.5) torus points */
       p.x[a] = tor[a];
-    if (p.nfft_flags & PRE_ONE_PSI)                                           /* precompute psi, the entries of the matrix B */
+    if (p.flags & PRE_ONE_PSI)                                           /* precompute psi, the entries of the matrix B */
       nfft_precompute_one_psi(&p);
     for (a = 0; a < obsnum; a++) {                                            /* and pass the [-0.5,0.5) torus points */
       p.f[a][0] = flx[a];
