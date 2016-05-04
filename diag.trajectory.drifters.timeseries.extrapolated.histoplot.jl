@@ -78,8 +78,8 @@ for z = 1:PARAMS
 # xmax = maximum(xpts) + delt * 5
 # ymin = minimum(ypts) - delt * 5
 # ymax = maximum(ypts) + delt * 5
-  z == UCUR && (xmin = -3.0 ; xmax = 4.0 ; ymin = -3.0 ; ymax = 4.0)
-  z == VCUR && (xmin = -3.0 ; xmax = 4.0 ; ymin = -3.0 ; ymax = 4.0)
+  z == UCUR && (xmin = -3.0 ; xmax = 3.0 ; ymin = -3.0 ; ymax = 3.0)
+  z == VCUR && (xmin = -3.0 ; xmax = 3.0 ; ymin = -3.0 ; ymax = 3.0)
 
   cols = ["red",  "blue", "green", "orange", "black", "white"]
   lims = [    1,      10,     100,     1000,   10000,  100000]
@@ -91,13 +91,14 @@ for z = 1:PARAMS
     mask = zpts .>= lims[a]
     tmp = Winston.Points(xpts[mask], ypts[mask], kind = "filled circle", "color", parse(Winston.Colorant, cols[a]), symbolsize = 0.1)
           Winston.add(ppp[tpos...], tmp)
-  if z == UCUR
-    tmp = Winston.PlotLabel(0.05, 0.85, plotitle, "texthalign", "left", "size", 3.4)
-          Winston.add(ppp[tpos...], tmp)
-  end
-  if z == VCUR
-    tmp = Winston.PlotLabel(0.04, 1.05 - a * 0.1, "<span foreground=\"$(cols[length(cols) - a + 1])\">\\geq $(lims[length(cols) - a + 1])</span>", "texthalign", "left", "size", 1.4)
-          Winston.add(ppp[tpos...], tmp)
+    if z == UCUR
+      tmp = Winston.PlotLabel(0.05, 0.93, plotitle, "texthalign", "left", "size", 3.4)
+            Winston.add(ppp[tpos...], tmp)
+    end
+    if z == VCUR
+      tmp = Winston.PlotLabel(0.04, 1.05 - a * 0.05, "<span foreground=\"$(cols[length(cols) - a + 1])\">\\geq $(lims[length(cols) - a + 1])</span>", "texthalign", "left", "size", 2.0)
+            Winston.add(ppp[tpos...], tmp)
+    end
   end
 
   (intbef, slobef) = linreg(xpts, ypts, zpts)
