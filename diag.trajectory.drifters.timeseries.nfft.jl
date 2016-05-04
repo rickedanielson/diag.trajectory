@@ -115,7 +115,7 @@ for line in eachline(fpa)                                                     # 
     else           tmp = "fft/$(ARGS[2]).$tail.fftcal"  end
     fpd = My.ouvre(tmp, "w", false)
     for a = 1:half + 1
-      tmp = @sprintf("%15.8f %15.8f %15.8f %15.8f %15.8f\n",
+      tmp = @sprintf("%15.8f %15.8f %15.8f %15.8f %15.8f %15.8f\n",
         (a - 1.0) / float(TIMLEN), spec[a,1], spec[a,2], spec[a,3], spec[a,4], spec[a,5])
       write(fpd, tmp)
     end

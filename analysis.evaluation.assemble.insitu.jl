@@ -6,7 +6,7 @@
 using My
 
 if size(ARGS) != (2,)
-  print("\nUsage: jjj $(basename(@__FILE__)) all.flux.daily all.flux.daily.locate_2.0_valid_remainder\n\n")
+  print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000\n\n")
   exit(1)
 end
 
@@ -18,7 +18,7 @@ fpa = My.ouvre(ARGS[1],          "r")
 fpb = My.ouvre(ARGS[2] * "_obs", "w")
 for line in eachline(fpa)
   vals = split(line)
-  if in((float(vals[5]), float(vals[6])), locs)
+  if in((float(vals[2]), float(vals[3])), locs)
     write(fpb, line)
   end
 end

@@ -44,8 +44,8 @@ elseif ARGS[2] == "shum"  vind = SHUM
   calb = [0.96,         0.92,    0.82,          0.98,     0.91,    0.87,     0.95,      0.85]
 end
 
-dirs = ["cfsr", "erainterim", "hoaps", "ifremerflux", "jofuro", "merra", "oaflux", "seaflux"]
-(dirn,) = size(dirs)
+dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
+dirn = length(dirs)
 
 fpa = My.ouvre(ARGS[1], "r")                                                  # open the insitu and analysis files
 fpn = Array(IOStream, 0)

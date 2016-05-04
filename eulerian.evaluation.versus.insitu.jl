@@ -25,7 +25,7 @@ elseif ARGS[2] == "vcur"  vind = VCUR
   calb = [0.96,         0.92,    0.82,          0.98,     0.91]
 end
 dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
-(dirn,) = size(dirs)
+dirn = length(dirs)
 
 fpa = My.ouvre(ARGS[1], "r")                                                  # open the insitu and analysis files
 fpn = Array(IOStream, 0)
