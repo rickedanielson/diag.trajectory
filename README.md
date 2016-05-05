@@ -126,7 +126,8 @@ wrkt ; nohup julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.t
        gzip extrapolated.histogr*dat ; mv extrapolated.* all/plot.histogr
 
 # identify the subset of drifter cal/val locations for which analyses are also available for much of 2001-2007 (call these the collocations)
-wrkt ; split -l 400 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib
+wrkt ; mkdir fft
+       split -l 400 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib
        split -l 400 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.timeseries.nfft.jl ::: buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali??? ::: ucur vcur | grep drift | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
@@ -144,8 +145,8 @@ wrkt ; split -l 400 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib bu
 #      cat  all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.not2000 | sort > bb ; diff aa bb ; rm aa bb
        mv commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?* all/limbo
 
-# assemble the insitu and analysis data for a triple collocation cal/val (such a slow analysis assembly needs profiling!)
-wrks ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/analysis.evaluation.assemble.insitu.jl all/buoydata_1993_2014_drogON.asc.nonmdt ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000     | grep drift | sort > commands
+# assemble the insitu and analysis data for a triple collocation cal/val
+wrkt ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/analysis.evaluation.assemble.insitu.jl all/buoydata_1993_2014_drogON.asc.nonmdt ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000     | grep buoy | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
        parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.colloc.discrete.source.jl                              ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000_obs | grep drift | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
