@@ -1,6 +1,7 @@
 #=
  = Loop through all locations of interest and assemble valid collocations
- = from the various in situ and analysis subdirs - RD May 2016.
+ = from the various in situ and analysis subdirs.  Ensure that both current
+ = components are valid for inclusion - RD May 2016.
  =#
 
 using My
@@ -14,8 +15,8 @@ if size(ARGS) != (1,)
 end
 
 vind = 0                                                                      # identify the output variable
-contains(ARGS[1], "ucur") && (vind = UCUR)
-contains(ARGS[1], "vcur") && (vind = VCUR)
+contains(ARGS[1], "ucur") && (vind = UCUR ; vine = VCUR)
+contains(ARGS[1], "vcur") && (vind = VCUR ; vine = UCUR)
 dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
 dirn = length(dirs)
 
@@ -43,11 +44,12 @@ for line in eachline(fpa)                                                     # 
   aft = fill(MISS, dirn)
   flag = true
   for (a, dira) in enumerate(dirs)
-    tmp = split(read_nth_line("$dira/$dira.$tail.bef", datind)) ; bef[a] = float(tmp[vind])
+    tmp = split(read_nth_line("$dira/$dira.$tail.bef", datind)) ; bef[a] = float(tmp[vind]) ; chkbef = float(tmp[vine])
     newdat = tmp[1] ; if dat != newdat  println("ERROR : $dat != $newdat") ; exit(-1)  end
-    tmp = split(read_nth_line("$dira/$dira.$tail.aft", datind)) ; aft[a] = float(tmp[vind])
+    tmp = split(read_nth_line("$dira/$dira.$tail.aft", datind)) ; aft[a] = float(tmp[vind]) ; chkaft = float(tmp[vine])
     newdat = tmp[1] ; if dat != newdat  println("ERROR : $dat != $newdat") ; exit(-1)  end
-    if bef[a] < -333.0 || bef[a] > 333.0 || aft[a] < -333.0 || aft[a] > 333.0  flag = false  end
+    if bef[a] < -333.0 || bef[a] > 333.0 || aft[a] < -333.0 || aft[a] > 333.0 ||
+       chkbef < -333.0 || chkbef > 333.0 || chkaft < -333.0 || chkaft > 333.0  flag = false  end
   end
 
   if flag                                                                     # and store the line if all values exist

@@ -145,9 +145,52 @@ wrkt ; mkdir fft
 #      cat  all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000 all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.not2000 | sort > bb ; diff aa bb ; rm aa bb
        mv commands buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?* all/limbo
 
+# plot the location and distribution of the collocations
+wrkt ; cd all
+       echo julia /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.evaluation.distribution.plot.jl buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.????.got2000 > commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.got2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.got2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.not2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.not2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.not2000\" >> commands
+       echo grads -blc \"diag.trajectory.drifters.locate buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.not2000\" >> commands ; echo "
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e xvfb-run --mem=2000mb
+       rm commands ; mv plot.trajectory.drifters.dots*locate*png plot.locate
+
+# plot the all-collocation-averaged (weighted by daily obs number) one-sided NFFT spectra for each variable and identify submonthly variance
+wrkt ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.nfft.avg.jl  ::: all/all.flux.daily.locate_2.0_?ali?.????.got2000      | grep flux | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e              julia  --mem=2000mb
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.nfft.plot.jl all/all.flux.daily.locate_2.0_calib.????.got2000.spec
+       xvfb-run -a julia /home1/homedir1/perso/rdaniels/bin/diag.heat.flux.timeseries.nfft.plot.jl all/all.flux.daily.locate_2.0_valid.????.got2000.spec
+       cd all ; cat *calib.shfx.got2000.spec.stat *calib.lhfx.got2000.spec.stat *calib.wspd.got2000.spec.stat *calib.airt.got2000.spec.stat *calib.sstt.got2000.spec.stat *calib.shum.got2000.spec.stat
+                cat *valid.shfx.got2000.spec.stat *valid.lhfx.got2000.spec.stat *valid.wspd.got2000.spec.stat *valid.airt.got2000.spec.stat *valid.sstt.got2000.spec.stat *valid.shum.got2000.spec.stat
+       cd .. ; rm commands ; vi coads.gts.ncepnrt.heat.flux.colloc.discrete.triple.jl
+
 # assemble the insitu and analysis data for a triple collocation cal/val
-wrkt ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/analysis.evaluation.assemble.insitu.jl all/buoydata_1993_2014_drogON.asc.nonmdt ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000     | grep buoy | sort > commands
+wrkt ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.colloc.discrete.insitu.jl all/buoydata_1993_2014_drogON.asc.nonmdt ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000     | grep drift | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia --mem=2000mb
-       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.colloc.discrete.source.jl                              ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000_obs | grep drift | sort > commands
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.colloc.discrete.source.jl                                          ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000_obs | grep drift | sort > commands
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
        rm commands
+
+# perform a global triple collocation cal/val and evaluate the calibrated analyses using all.flux.daily.locate_2.0_calib
+wrkt ; cd all ; mkdir zali.recalib.false.iterate.false zali.recalib.false.iterate.true
+                mkdir  zali.recalib.true.iterate.false  zali.recalib.true.iterate.true ; cd ..
+       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.colloc.discrete.triple.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000_obs.comb | grep drift | sort > commands
+       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
+       mv *cali zali.recalib.false.iterate.false                        (following "grep const *colloc.discrete.triple* | grep -i alib")
+       cd       zali.recalib.false.iterate.false ; cat *calib.ucur*cali *calib.vcur*cali | grep const
+                                                   cat *valid.ucur*cali *valid.vcur*cali | grep const
+       vi diag.trajectory.drifters.colloc.discrete.triple.jl
+       mv *cali zali.recalib.false.iterate.true                         (following "grep const *colloc.discrete.triple* | grep -i alib")
+       cd       zali.recalib.false.iterate.true  ; cat *calib.ucur*cali *calib.vcur*cali | grep const
+                                                   cat *valid.ucur*cali *valid.vcur*cali | grep const
+       vi diag.trajectory.drifters.colloc.discrete.triple.jl
+       mv *cali zali.recalib.true.iterate.false
+       cd       zali.recalib.true.iterate.false  ; diff zali.recalib.*.iterate.false/*calib.shfx*cali
+       mv *cali zali.recalib.true.iterate.true
+       cd       zali.recalib.true.iterate.true   ; diff zali.recalib.*.iterate.true/*calib.shfx*cali
+       wrkt ; rm commands
+
