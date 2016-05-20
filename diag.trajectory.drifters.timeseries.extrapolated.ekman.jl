@@ -17,7 +17,7 @@ const EXTRA            = 9                              # number of points used 
 const TIMS             = 3408                           # number in timeseries
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (2,)
+if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) v2.0_global_025_deg_ekman_15m z.listah\n\n")
   exit(1)
 end

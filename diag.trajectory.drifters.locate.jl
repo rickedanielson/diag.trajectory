@@ -6,7 +6,7 @@
 
 using My
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt\n")
   exit(1)
 end

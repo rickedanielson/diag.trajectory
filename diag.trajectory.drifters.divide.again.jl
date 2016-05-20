@@ -11,7 +11,7 @@ using My, LibGEOS
 const LEN              = 101
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (0,)
+if (argc = length(ARGS)) != 0
   print("\nUsage: jj $(basename(@__FILE__))\n\n")
   exit(1)
 end

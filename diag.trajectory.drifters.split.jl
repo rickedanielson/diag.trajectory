@@ -12,7 +12,7 @@ const LON              = 2
 const NUM              = 3
 const PARAMS           = 3
 
-if size(ARGS) == (0,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate\n\n")
   exit(1)
 end

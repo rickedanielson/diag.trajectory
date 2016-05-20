@@ -19,7 +19,7 @@ const CUTOFF           = 2000                           # minimum number from al
 const MISS             = -9999.0                        # generic missing value
 const CALIB            = 0                              # flag determining whether to calibrate (1 = yes)
 
-if size(ARGS) != (2,)
+if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib ucur\n\n")
   exit(1)
 end

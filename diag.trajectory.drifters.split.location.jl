@@ -12,7 +12,7 @@ const LOTS             = 1000
 const TIMS             = 3408                           # number in 6-h timeseries
 const START            = 2                              # make START-1 a valid array index
 
-if size(ARGS) != (2,)
+if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib buoydata_1993_2014_drogON.asc.nonmdt.sort\n\n")
   exit(1)
 end

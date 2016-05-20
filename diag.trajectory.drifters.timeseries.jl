@@ -10,7 +10,7 @@ const UCUR             = 1                              # identify indecies of a
 const VCUR             = 2
 const PARAMS           = 2
 
-if size(ARGS) != (2,)
+if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.sort v2.0_global_025_deg_ekman_15m\n\n")
   exit(1)
 end

@@ -12,7 +12,7 @@ const LOTS             = 10000
 const MISS             = -9999.0                        # generic missing value
 const SKIP             = 3                              # number of 6-hourly simulated drifters to skip (3 = daily)
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jj $(basename(@__FILE__)) 2010-10-04-1800.00070972\n\n")
   exit(1)
 end

@@ -7,7 +7,7 @@ using My
 const TIMS             = 3408                           # number in timeseries
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (4,)
+if (argc = length(ARGS)) != 4
   print("\nUsage: jjj $(basename(@__FILE__)) v2.0_global_025_deg_geostrophic v2.0_global_025_deg_ekman_15m v2.0_global_025_deg_total_15m z.listaa\n\n")
   exit(1)
 end

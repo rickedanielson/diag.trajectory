@@ -19,11 +19,11 @@ const SRCS             = 3
 const TIMS             = 3408                           # number in timeseries
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (1,) && size(ARGS) != (2,)
+if (argc = length(ARGS)) != 1 && argc != 2
   print("\nUsage: jjj $(basename(@__FILE__)) z.list [30]\n\n")
   exit(1)
 end
-maxfiles = 9e9 ; size(ARGS) == (2,) && (maxfiles = parse(Int64, ARGS[2]))
+maxfiles = 9e9 ; argc == 2 && (maxfiles = parse(Int64, ARGS[2]))
 
 dirs = ["v2.0_global_025_deg_ekman_15m", "v2.0_global_025_deg_ekman_hs", "v2.0_global_025_deg_geostrophic", "v2.0_global_025_deg_total_15m", "v2.0_global_025_deg_total_hs"]
 dirn = length(dirs)

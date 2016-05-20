@@ -4,7 +4,7 @@
  =  files from different subdirs have the same name) - RD September 2015
  =#
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jjj $(basename(@__FILE__)) /home/cercache/project/globcurrent/data/globcurrent/v2.0/global_025_deg/total_15m\n\n")
   exit(1)
 end

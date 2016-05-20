@@ -18,7 +18,7 @@ const VARN             = 22                             # number of output varia
 const MISS             = -9999.0                        # generic missing value
 const CALIB            = 1                              # flag determining whether to calibrate (1 = yes)
 
-if size(ARGS) != (2,)
+if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) all.flux.daily_2.0_valid_remainder shfx/lhfx/wspd/airt/sstt/shum\n\n")
   exit(1)
 end

@@ -16,7 +16,7 @@ const SSTT             = 5
 const SHUM             = 6
 const PARAMS           = 6
 
-if size(ARGS) != (2,)
+if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) all.flux.daily_2.0_valid_remainder merra\n\n")
   exit(1)
 end

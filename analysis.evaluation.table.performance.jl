@@ -10,7 +10,7 @@ const VARS             = 4                              # number of triple collo
 const COEF             = 10                             # number of polynomial coefficients
 const MISS             = -9999.0                        # generic missing value
 
-(argc,) = size(ARGS) ; if argc == 0
+if (argc = length(ARGS)) == 0
   print("\nUsage: jjj $(basename(@__FILE__)) all.flux.daily.locate_2.0_calib*\n\n")
   exit(1)
 end

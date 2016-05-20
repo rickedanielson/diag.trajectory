@@ -11,7 +11,7 @@ using My
 const LEN              = 101
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jj $(basename(@__FILE__)) lagreg\n\n")
   exit(1)
 end

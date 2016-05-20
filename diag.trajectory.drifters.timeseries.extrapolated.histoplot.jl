@@ -19,7 +19,7 @@ const SRCS             = 3
 const TIMS             = 3408                           # number in timeseries
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jjj $(basename(@__FILE__)) v2.0_global_025_deg_geostrophic\n\n")
   exit(1)
 end

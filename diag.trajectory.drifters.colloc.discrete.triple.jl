@@ -1,18 +1,19 @@
 #=
  = Perform a single or a series of analysis calibration and performance estimates,
- = with the series performed across a parameter space defined in terms of surface
- = current and collocation position (lat/lon; mainly because these are available
- = from buoy obs, although Lagrangian or Eulerian parameters such as MLD, SSH/SST/
- = SSS structure, bathymetry or nearness to the coast, and possibly date or season
- = could be employed).  Fixed-size subsets of available collocations are selected
- = based on geometrical closeness to the target parameters (by equating units and
- = ignoring pdf shape, for example) and employed to obtain each calibration and
- = performance estimate.  Target parameters are then varied with each subset,
- = yielding the actual mean parameters by a simple average (and where two averages
- = are close, these are combined).  The ungridded variations in analysis quality
- = are then gridded in order to permit a lookup table for maps of analysis quality
- = that depend on these parameters.  Simple polynomials (whose coefficients are
- = found by least squares) are employed to regrid - RD May 2016.
+ = with the single option employing all available collocations, or for a series of
+ = estimates performed across a parameter space defined in terms of a set of
+ = hypercube dimensions (e.g., surface current and lat/lon position, mainly because
+ = these are readily available from in situ obs, inertial oscillation proxy, Lagrangian
+ = or Eulerian parameters such as MLD, SSH/SST/SSS structure, bathymetry or nearness
+ = to the coast, and possibly date or season).  For the hypercube option, fixed-size
+ = subsets of available collocations are selected based on geometrical closeness to
+ = the target parameters (by equating units and ignoring pdf shape, for example) and
+ = employed to obtain each calibration and performance estimate.  Target parameters
+ = are then varied with each subset, yielding the actual mean parameters by a simple
+ = average (and where two averages are close, these should be combined).  The ungridded
+ = variations in analysis quality are then gridded in order to permit a lookup table
+ = for maps of analysis quality that depend on these parameters.  Simple polynomials
+ = (whose coefficients are found by least squares) are employed to regrid - RD May 2016.
  =#
 
 using My, Optim
@@ -26,257 +27,89 @@ const TOTA             = 12                             # before and after
 const FRAC             = 0.9                            # fractional update during iterations
 const DELTA            = 0.001                          # generic convergence criterion
 const SDTRIM           = 6.0                            # standard deviation trimming limit
-const STORAGE          = true                           # retain the triple calibration metrics in a file
-const ITERATE          = false                          # iterate on representativeness and calibration
-const RECALIB          = false                          # perform an affine recalibration
-const GLOBAL           = true                           # with STORAGE = ITERATE = true and RECALIB = false
+const RECALIB          = true                           # perform an affine recalibration
+const GLOBAL           = false                          # employ all collocations or a targeted subsets
 const ANALYS           = 1                              # number of current analyses
+const HYPER            = 1                              # number of hypercube dimensions (independent variables)
 
 const DIRS  = ["v2.0_global_025_deg_total_15m"]
-if ITERATE
-const UCUAC = [ -9999.00000000]
-const UCUBC = [ -9999.00000000]
-const VCUAC = [ -9999.00000000]
-const VCUBC = [ -9999.00000000]
+const UCUAC = [     0.00312866]
+const UCUBC = [     1.45594908]
+const VCUAC = [     0.00055068]
+const VCUBC = [     1.48561760]
+const UCUAV = [     0.00387766]
+const UCUBV = [     1.30775895]
+const VCUAV = [     0.00135119]
+const VCUBV = [     1.32680928]
 
-const UCUAV = [ -9999.00000000]
-const UCUBV = [ -9999.00000000]
-const VCUAV = [ -9999.00000000]
-const VCUBV = [ -9999.00000000]
-else
-const UCUAC = [     1.00000000]
-const UCUBC = [     1.00000000]
-const VCUAC = [     1.00000000]
-const VCUBC = [     1.00000000]
+const UCLAC = [     0.04417926     -0.10298563      0.02980934]
+const UCLBC = [     4.01156863     -6.30790060      3.07021902]
+const VCLAC = [    -0.05374986      0.06217939     -0.01455402]
+const VCLBC = [     1.60881144     -3.01035929      2.12685222]
+const UCLAV = [    -0.11382001      0.08965406      0.00104184]
+const UCLBV = [     2.98988430     -4.72762832      2.52096027]
+const VCLAV = [    -0.02881019      0.00653482      0.01137809]
+const VCLBV = [     4.51764345     -6.78495552      3.07755129]
 
-const UCUAV = [     1.00000000]
-const UCUBV = [     1.00000000]
-const VCUAV = [     1.00000000]
-const VCUBV = [     1.00000000]
-end
-const UCURC = [     1.00000000]
-const VCURC = [     1.00000000]
-const UCURV = [     1.00000000]
-const VCURV = [     1.00000000]
-
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb\n\n")
   exit(1)
 end
 
 #=
  = Function returning triple collocation cal/val measures for a group of analyses, following McColl
- = et al. (2014).  Inputs are an array of collocated values and an array of measures of short timescale
- = variability (rsqr).  Here we loop over many analyses (e.g., given by two types of extrapolations: one
- = analysis extrapolated from before and the other analyses extrapolated from after each date, and vice
- = versa, with the third dataset being in situ data that are valid and independent on the date).  Stats
- = are returned for each analysis, with possible consideration (using rsqr) of effective resolution after
- = a rescaling, given that the analysis of interest may be either low or intermediate resolution compared
- = to the other analysis and in situ.  Effective resolution is then monitored, as only at low resolution
- = does rsqr enter into the equations and require iteration [i.e., when the analysis of interest has the
- = lowest resolution, the covariance between the other analysis and in situ should be reduced by rsqr
- = (McColl et al. 2014); this impacts rescaling, and in turn, rsqr depends on rescaling (Vogelzang et al.
- = 2011, Eq. 10), so iteration is required as long as the analysis of interest remains lowest resolution;
- = the rsqr ranking is checked to ensure that the effective resolution ranking does not change; if the
- = analysis of interest is intermediate resolution, then its RMSE does not depend on rsqr and no iteration
- = is required (Vogelzang and Stoffelen 2012 Eq. 2.25)] - RD September, October 2015, February 2016.
+ = et al. (2014).  Inputs are an array of collocated values and stats are returned for each analysis,
+ = where it is assumed that extrapolation from before and after is done using the same analysis, so
+ = no consideration of relative effective resolution (and no iteration as in Vogelzang et al. 2011)
+ = is necessary (i.e., in situ is highest resolution, but there is no representativeness error
+ = associated with one analysis being intermediate resolution and another being even lower resolution).
  =#
 
-function triple(curr::Array{Float64,3}, rsqr::Array{Float64,1})
-  allalpa = Array(Float64, ANALYS, ANALYS)                                    # use in situ and (a) any one analysis
-  allbeta = Array(Float64, ANALYS, ANALYS)                                    # in turn as references and store the
-  allsiga = Array(Float64, ANALYS, ANALYS)                                    # third (b) error and correlation values
-  allcora = Array(Float64, ANALYS, ANALYS)                                    # (do this for both extrapolations)
-  allmasa = Array(Float64, ANALYS, ANALYS, 3)
-  allalpb = Array(Float64, ANALYS, ANALYS)
-  allbetb = Array(Float64, ANALYS, ANALYS)
-  allsigb = Array(Float64, ANALYS, ANALYS)
-  allcorb = Array(Float64, ANALYS, ANALYS)
-  allmasb = Array(Float64, ANALYS, ANALYS, 3)
-  allalpc = Array(Float64, ANALYS)
-  allbetc = Array(Float64, ANALYS)
-  allsigc = Array(Float64, ANALYS)
-  allcorc = Array(Float64, ANALYS)
-  allmass = Array(Float64, ANALYS, 3)
+function triple(curr::Array{Float64,3})
+  allalp = Array(Float64, ANALYS)
+  allbet = Array(Float64, ANALYS)
+  allsig = Array(Float64, ANALYS)
+  allcor = Array(Float64, ANALYS)
+  allmas = Array(Float64, ANALYS, HYPER)
 
-  for a = 1:ANALYS
-    for b = 1:ANALYS                                                          # in addition to the "now" in situ obs,
-      mask = masquextreme(curr[1,:,ANALYS+1], SDTRIM) &                       # use bef analysis "a" and aft analysis "b"
-             masquextreme(curr[1,:,       a], SDTRIM) &                       # (having removed collocations that are beyond
-             masquextreme(curr[2,:,       b], SDTRIM)                         # SDTRIM standard deviations from their mean)
-      sampbuoy = curr[1,mask,ANALYS+1]                                        # and iterate if "b" is higher resolution
-      sampsate = curr[1,mask,       a]                                        # then get the parametric center of mass of
-      sampfore = curr[2,mask,       b]                                        # the resulting subset using its buoy values
-      sampairt = mean(curr[1,mask,ANALYS+2])
-      sampwspd = mean(curr[2,mask,ANALYS+1])
-      sampsstt = mean(curr[2,mask,ANALYS+2])
-      allmasa[a,b,:] = [sampairt sampwspd sampsstt]
-      if GLOBAL  @show a, b  end
+  for a = 1:ANALYS                                                            # get the parametric center of mass
+    mask = masquextreme(curr[1,   :,ANALYS+1], SDTRIM) &                      # that defines each subset in terms of
+           masquextreme(curr[1,   :,       a], SDTRIM) &                      # hypercube independent variable (after 
+           masquextreme(curr[2,   :,       a], SDTRIM)                        # trimming extreme values first)
+    sampsitu    =       curr[1,mask,ANALYS+1]
+    samprefa    =       curr[1,mask,       a]
+    samprefb    =       curr[2,mask,       a]
+    allmas[a,1] =  mean(curr[2,mask,ANALYS+1])
 
-      deltasqr = rsqr[b] > rsqr[a] ? rsqr[b] - rsqr[a] : 0.0
-      bet2 = bet3 = 1.0
-      alp2 = alp3 = 0.0
-#=
-      flag = ITERATE
-      while flag == true
-        avg1 = mean(sampbuoy)
-        avg2 = mean(sampsate)
-        avg3 = mean(sampfore)
-        cv11 = mean(sampbuoy.*sampbuoy) - avg1^2
-        cv12 = mean(sampbuoy.*sampsate) - avg1 * avg2 - deltasqr              # write("cv12 = $cv12\n")
-        cv13 = mean(sampbuoy.*sampfore) - avg1 * avg3
-        cv22 = mean(sampsate.*sampsate) - avg2^2
-        cv23 = mean(sampsate.*sampfore) - avg2 * avg3
-        cv33 = mean(sampfore.*sampfore) - avg3^2
+    avg1 = mean(sampsitu)
+    avg2 = mean(samprefa)
+    avg3 = mean(samprefb)
+    cv11 = mean(sampsitu.*sampsitu) - avg1^2
+    cv12 = mean(sampsitu.*samprefa) - avg1 * avg2
+    cv13 = mean(sampsitu.*samprefb) - avg1 * avg3
+    cv22 = mean(samprefa.*samprefa) - avg2^2
+    cv23 = mean(samprefa.*samprefb) - avg2 * avg3
+    cv33 = mean(samprefb.*samprefb) - avg3^2
 
-        alp2old = alp2
-        alp3old = alp3
-        bet2old = bet2
-        bet3old = bet3
-        subfrac = FRAC
-        bet2 = subfrac * bet2old + (1.0 - subfrac) * (cv23 / cv13)            # write("bet2 = $bet2\n")
-        bet3 = subfrac * bet3old + (1.0 - subfrac) * (cv23 / cv12)            # write("bet3 = $bet3\n")
-        alp2 = subfrac * alp2old + (1.0 - subfrac) * (avg2 - bet2 * avg1)     # write("alp2 = $alp2\n")
-        alp3 = subfrac * alp3old + (1.0 - subfrac) * (avg3 - bet3 * avg1)     # write("alp3 = $alp3\n")
-        sampsate = (curr[1,mask,a] - alp2) / bet2                             # rescale analysis current
-        sampfore = (curr[2,mask,b] - alp3) / bet3
-        rsqrsate =      rsqr[a]         / bet2 / bet2
-        rsqrfore =      rsqr[b]         / bet3 / bet3
-#       print("cv23 $cv23 cv13 $cv13 cv23 / cv13 $(cv23 / cv13)\n")
-#       print("loop-1 $a $b rsqr[a] $(rsqr[a]) / bet2 $bet2 = rsqrsate $rsqrsate   rsqr[b] $(rsqr[b]) / bet3 $bet3 = rsqrfore $rsqrfore\n")
-#       print("$a $b rsqr[a] $(rsqr[a]) / bet2 $bet2 = rsqrsate $rsqrsate   rsqr[b] $(rsqr[b]) / bet3 $bet3 = rsqrfore $rsqrfore\n")
-#       @printf("%d %d rsqr[a] %9.3f / bet2 %9.3f = rsqrsate %9.3f   rsqr[b] %9.3f / bet3 %9.3f = rsqrfore %9.3f\n",
-#         a, b, rsqr[a], bet2, rsqrsate, rsqr[b], bet3, rsqrfore)
+    bet2 = cv23 / cv13
+    bet3 = cv23 / cv12
+    alp2 = avg2 - bet2 * avg1
+    alp3 = avg3 - bet3 * avg1
 
-        deltaold = deltasqr
-        deltasqr = rsqrfore > rsqrsate ? rsqrfore - rsqrsate : 0.0
-        if abs(deltasqr - deltaold) < DELTA  flag = false  end
-        if rsqr[a] > rsqr[b] || a == b  flag = false  end
-      end
-=#
-      avg1 = mean(sampbuoy)
-      avg2 = mean(sampsate)
-      avg3 = mean(sampfore)
-      cv11 = mean(sampbuoy.*sampbuoy) - avg1^2
-      cv12 = mean(sampbuoy.*sampsate) - avg1 * avg2 - deltasqr
-      cv13 = mean(sampbuoy.*sampfore) - avg1 * avg3
-      cv22 = mean(sampsate.*sampsate) - avg2^2
-      cv23 = mean(sampsate.*sampfore) - avg2 * avg3
-      cv33 = mean(sampfore.*sampfore) - avg3^2
+    tmpval = cv11 - cv12 * cv13 / cv23 ; sig1 = tmpval > 0 ? sqrt(tmpval) : 0.0
+    tmpval = cv22 - cv12 * cv23 / cv13 ; sig2 = tmpval > 0 ? sqrt(tmpval) : 0.0
+    tmpval = cv33 - cv13 * cv23 / cv12 ; sig3 = tmpval > 0 ? sqrt(tmpval) : 0.0
+    tmpval = cv12 * cv13 / cv11 / cv23 ; cor1 = tmpval > 0 ? sqrt(tmpval) : 0.0
+    tmpval = cv12 * cv23 / cv22 / cv13 ; cor2 = tmpval > 0 ? sqrt(tmpval) : 0.0
+    tmpval = cv13 * cv23 / cv33 / cv12 ; cor3 = tmpval > 0 ? sqrt(tmpval) : 0.0
 
-      bet2 = cv23 / cv13
-      bet3 = cv23 / cv12
-      alp2 = avg2 - bet2 * avg1
-      alp3 = avg3 - bet3 * avg1
-
-      tmpval = cv11 - cv12 * cv13 / cv23 ; sig1 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv22 - cv12 * cv23 / cv13 ; sig2 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv33 - cv13 * cv23 / cv12 ; sig3 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv12 * cv13 / cv11 / cv23 ; cor1 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv12 * cv23 / cv22 / cv13 ; cor2 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv13 * cv23 / cv33 / cv12 ; cor3 = tmpval > 0 ? sqrt(tmpval) : 0.0
-
-      allalpa[a,b] = alp3
-      allbeta[a,b] = bet3
-      allsiga[a,b] = sig3
-      allcora[a,b] = cor3
-#=
-      mask = masquextreme(curr[1,:,ANALYS+1], SDTRIM) &                       # use aft analysis "a" and bef analysis "b"
-             masquextreme(curr[2,:,       a], SDTRIM) &                       # (having removed collocations that are beyond
-             masquextreme(curr[1,:,       b], SDTRIM)                         # SDTRIM standard deviations from their mean)
-      sampbuoy = curr[1,mask,ANALYS+1]                                        # and iterate if "b" is higher resolution
-      sampsate = curr[2,mask,       a]                                        # then get the parametric center of mass of
-      sampfore = curr[1,mask,       b]                                        # the resulting subset using its buoy values
-      sampairt = mean(curr[1,mask,ANALYS+2])
-      sampwspd = mean(curr[2,mask,ANALYS+1])
-      sampsstt = mean(curr[2,mask,ANALYS+2])
-      allmasb[a,b,:] = [sampairt sampwspd sampsstt]
-
-      deltasqr = rsqr[b] > rsqr[a] ? rsqr[b] - rsqr[a] : 0.0
-      bet2 = bet3 = 1.0
-      alp2 = alp3 = 0.0
-
-      flag = ITERATE
-      while flag == true
-        avg1 = mean(sampbuoy)
-        avg2 = mean(sampsate)
-        avg3 = mean(sampfore)
-        cv11 = mean(sampbuoy.*sampbuoy) - avg1^2
-        cv12 = mean(sampbuoy.*sampsate) - avg1 * avg2 - deltasqr              # write("cv12 = $cv12\n")
-        cv13 = mean(sampbuoy.*sampfore) - avg1 * avg3
-        cv22 = mean(sampsate.*sampsate) - avg2^2
-        cv23 = mean(sampsate.*sampfore) - avg2 * avg3
-        cv33 = mean(sampfore.*sampfore) - avg3^2
-
-        alp2old = alp2
-        alp3old = alp3
-        bet2old = bet2
-        bet3old = bet3
-        subfrac = FRAC
-        bet2 = subfrac * bet2old + (1.0 - subfrac) * (cv23 / cv13)            # write("bet2 = $bet2\n")
-        bet3 = subfrac * bet3old + (1.0 - subfrac) * (cv23 / cv12)            # write("bet3 = $bet3\n")
-        alp2 = subfrac * alp2old + (1.0 - subfrac) * (avg2 - bet2 * avg1)     # write("alp2 = $alp2\n")
-        alp3 = subfrac * alp3old + (1.0 - subfrac) * (avg3 - bet3 * avg1)     # write("alp3 = $alp3\n")
-        sampsate = (curr[2,mask,a] - alp2) / bet2                             # rescale analysis current
-        sampfore = (curr[1,mask,b] - alp3) / bet3
-        rsqrsate =      rsqr[a]         / bet2 / bet2
-        rsqrfore =      rsqr[b]         / bet3 / bet3
-#       print("cv23 $cv23 cv13 $cv13 cv23 / cv13 $(cv23 / cv13)\n")
-#       print("loop-2 $a $b rsqr[a] $(rsqr[a]) / bet2 $bet2 = rsqrsate $rsqrsate   rsqr[b] $(rsqr[b]) / bet3 $bet3 = rsqrfore $rsqrfore\n")
-#       print("$a $b rsqr[a] $(rsqr[a]) / bet2 $bet2 = rsqrsate $rsqrsate   rsqr[b] $(rsqr[b]) / bet3 $bet3 = rsqrfore $rsqrfore\n")
-#       @printf("%d %d rsqr[a] %9.3f / bet2 %9.3f = rsqrsate %9.3f   rsqr[b] %9.3f / bet3 %9.3f = rsqrfore %9.3f\n",
-#         a, b, rsqr[a], bet2, rsqrsate, rsqr[b], bet3, rsqrfore)
-
-        deltaold = deltasqr
-        deltasqr = rsqrfore > rsqrsate ? rsqrfore - rsqrsate : 0.0
-        if abs(deltasqr - deltaold) < DELTA  flag = false  end
-        if rsqr[a] > rsqr[b] || a == b  flag = false  end
-      end
-
-      avg1 = mean(sampbuoy)
-      avg2 = mean(sampsate)
-      avg3 = mean(sampfore)
-      cv11 = mean(sampbuoy.*sampbuoy) - avg1^2
-      cv12 = mean(sampbuoy.*sampsate) - avg1 * avg2 - deltasqr
-      cv13 = mean(sampbuoy.*sampfore) - avg1 * avg3
-      cv22 = mean(sampsate.*sampsate) - avg2^2
-      cv23 = mean(sampsate.*sampfore) - avg2 * avg3
-      cv33 = mean(sampfore.*sampfore) - avg3^2
-
-      bet2 = cv23 / cv13
-      bet3 = cv23 / cv12
-      alp2 = avg2 - bet2 * avg1
-      alp3 = avg3 - bet3 * avg1
-
-      tmpval = cv11 - cv12 * cv13 / cv23 ; sig1 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv22 - cv12 * cv23 / cv13 ; sig2 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv33 - cv13 * cv23 / cv12 ; sig3 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv12 * cv13 / cv11 / cv23 ; cor1 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv12 * cv23 / cv22 / cv13 ; cor2 = tmpval > 0 ? sqrt(tmpval) : 0.0
-      tmpval = cv13 * cv23 / cv33 / cv12 ; cor3 = tmpval > 0 ? sqrt(tmpval) : 0.0
-
-      allalpb[a,b] = alp3
-      allbetb[a,b] = bet3
-      allsigb[a,b] = sig3
-      allcorb[a,b] = cor3
-=#
-    end
+    allalp[a] = 0.5 * (alp2 + alp3)
+    allbet[a] = 0.5 * (bet2 + bet3)
+    allsig[a] = 0.5 * (sig2 + sig3)
+    allcor[a] = 0.5 * (cor2 + cor3)
   end
 
-# for b = 1:ANALYS
-#   tmpa = 0.0 ; for a = 1:ANALYS  if a != b  tmpa += allalpa[a,b]    + allalpb[a,b]    end  end ; allalpc[b]   = 0.5 * tmpa / (ANALYS - 1.0)
-#   tmpa = 0.0 ; for a = 1:ANALYS  if a != b  tmpa += allbeta[a,b]    + allbetb[a,b]    end  end ; allbetc[b]   = 0.5 * tmpa / (ANALYS - 1.0)
-#   tmpa = 0.0 ; for a = 1:ANALYS  if a != b  tmpa += allsiga[a,b]    + allsigb[a,b]    end  end ; allsigc[b]   = 0.5 * tmpa / (ANALYS - 1.0)
-#   tmpa = 0.0 ; for a = 1:ANALYS  if a != b  tmpa += allcora[a,b]    + allcorb[a,b]    end  end ; allcorc[b]   = 0.5 * tmpa / (ANALYS - 1.0)
-#   tmpa = 0.0 ; for a = 1:ANALYS  if a != b  tmpa += allmasa[a,b,:] .+ allmasb[a,b,:]  end  end ; allmass[b,:] = 0.5 * tmpa / (ANALYS - 1.0)
-# end
-  allalpc[1]   = allalpa[1,1]
-  allbetc[1]   = allbeta[1,1]
-  allsigc[1]   = allsiga[1,1]
-  allcorc[1]   = allcora[1,1]
-  allmass[1,:] = allmasa[1,1,:]
-
-  return(allmass, allalpc, allbetc, allsigc, allcorc)                # then return the average stats
+  return(allmas, allalp, allbet, allsig, allcor)                              # then return the average stats
 end
 
 #=
@@ -284,151 +117,168 @@ end
  =#
 
 const MISS             = -9999.0                        # generic missing value
-if GLOBAL
-  const RANGA          =   0.0:10.0: 0.0                # target sampling range for AIRT dimension
-  const RANGB          =   0.0:10.0: 0.0                # target sampling range for WSPD dimension
-  const RANGC          =   0.0:10.0: 0.0                # target sampling range for SSTT dimension
+if GLOBAL || RECALIB
+  const RANGE          = 0.0:10.0: 0.0                  # target sampling range for current speed
   const CUTOFF         = 4500000000                     # number of collocations in a subset
 else
-  const RANGA          = -40.0:10.0:30.0                # target sampling range for AIRT dimension
-  const RANGB          =   0.0:10.0:30.0                # target sampling range for WSPD dimension
-  const RANGC          =   0.0:10.0:30.0                # target sampling range for SSTT dimension
-  const CUTOFF         = 5000                           # number of collocations in a subset
+  const RANGE          = 0.1: 0.1: 1.3                  # target sampling range for current speed
+  const CUTOFF         = 200                            # number of collocations in a subset
 end
 
 const ALPH             = 1                              # error model x = ALPH + BETA * truth + error
 const BETA             = 2                              # error model x = ALPH + BETA * truth + error
 const SIGM             = 3                              # triple coll RMSE
 const CORR             = 4                              # triple coll correlation coefficient
-const MAIR             = 5                              # center-of-mass parameter
-const MSPD             = 6                              # center-of-mass parameter
-const MSST             = 7                              # center-of-mass parameter
-const PARAMS           = 7                              # number of triple coll statistics
+const MSPD             = 5                              # center-of-mass parameter
+const PARAMS           = 5                              # number of triple collocation parameters
 
-contains(ARGS[1], "calib.ucur") && (alph = UCUAV ; beta = UCUBV ; rsqr = UCURC ; varname = "UCU.C")
-contains(ARGS[1], "calib.vcur") && (alph = VCUAV ; beta = VCUBV ; rsqr = VCURC ; varname = "VCU.C")
-contains(ARGS[1], "valid.ucur") && (alph = UCUAC ; beta = UCUBC ; rsqr = UCURV ; varname = "UCU.V")
-contains(ARGS[1], "valid.vcur") && (alph = VCUAC ; beta = VCUBC ; rsqr = VCURV ; varname = "VCU.V")
+contains(ARGS[1], "calib.ucur") && (alph = UCUAV ; beta = UCUBV ; alpl = UCLAV ; betl = UCLBV ; varname = "UC..C")
+contains(ARGS[1], "calib.vcur") && (alph = VCUAV ; beta = VCUBV ; alpl = VCLAV ; betl = VCLBV ; varname = "VC..C")
+contains(ARGS[1], "valid.ucur") && (alph = UCUAC ; beta = UCUBC ; alpl = UCLAC ; betl = UCLBC ; varname = "UC..V")
+contains(ARGS[1], "valid.vcur") && (alph = VCUAC ; beta = VCUBC ; alpl = VCLAC ; betl = VCLBC ; varname = "VC..V")
+contains(ARGS[1],      ".ucur") && (uvuv = replace(ARGS[1], "ucur", "vcur"))
+contains(ARGS[1],      ".vcur") && (uvuv = replace(ARGS[1], "vcur", "ucur"))
+contains(ARGS[1], "calib.ucur") && (alpu = UCUAV ; betu = UCUBV ; alpv = VCUAV ; betv = VCUBV)
+contains(ARGS[1], "calib.vcur") && (alpu = VCUAV ; betu = VCUBV ; alpv = UCUAV ; betv = UCUBV)
+contains(ARGS[1], "valid.ucur") && (alpu = UCUAC ; betu = UCUBC ; alpv = VCUAC ; betv = VCUBC)
+contains(ARGS[1], "valid.vcur") && (alpu = VCUAC ; betu = VCUBC ; alpv = UCUAC ; betv = UCUBC)
 
 fpa = My.ouvre(ARGS[1], "r") ; lines = readlines(fpa) ; close(fpa)            # read and count all triple collocations
-(linum,) = size(lines)                                                        # and allocate for the target parameters and
+fpa = My.ouvre(   uvuv, "r") ; linez = readlines(fpa) ; close(fpa)            # (including both current components) and
+linum = length(lines) ; linuz = length(linez)                                 # allocate for the target parameters and
+if linum != linuz
+  print("\nERROR: number of lines in $(ARGS[1]) and $uvuv are $linum != $linuz\n\n")
+  exit(-1)
+end
 dist = zeros(linum)                                                           # distance to them, the resulting mean params,
 chnk = linum < CUTOFF ? linum : CUTOFF                                        # and the triple collocation cal/val estimates
-curr = zeros(2, chnk, ANALYS + 2)
-target = [MISS for a = RANGA, b = RANGB, c = RANGC, d = 1:3]
-calval = [MISS for a = RANGA, b = RANGB, c = RANGC, d = 1:ANALYS, e = 1:PARAMS]
+curr = zeros(2, chnk, ANALYS + 1)
+calval = [MISS for a = RANGE, b = 1:ANALYS, c = 1:PARAMS]
 
-for (a, rana) in enumerate(RANGA)                                             # loop through the target parameters and
-  for (b, ranb) in enumerate(RANGB)                                           # isolate the nearest CUTOFF set of obs
-    for (c, ranc) in enumerate(RANGC)
-      for (d, line) in enumerate(lines)
-        vals = float(split(line))
-        dist[d] = (rana - vals[OCUR])^2.0 +
-                  (ranb - vals[OLAT])^2.0 +
-                  (ranc - cos(pi / 180.0 * vals[OLON]))^2.0
-      end
-      lims = sort(dist)[chnk]
+for a = 1:ANALYS                                                              # delete files so as to append below
+  filename = ARGS[1] * "." * DIRS[a] * ".cali.locl"
+  isfile(filename) && (print("rm $filename\n") ; rm(filename))
+end
 
-      e = 1                                                                   # get cal/val parameters for this subset
-      for (d, line) in enumerate(lines)                                       # (possibly after recalibrating)
-        if dist[d] <= lims && e <= chnk
-          vals = float(split(line))
-          curr[1,e,:] = [vals[TOTB] vals[OCUR] vals[OCUR]]
-          curr[2,e,:] = [vals[TOTA] vals[OLAT] cos(pi / 180.0 * vals[OLON])]
-          if RECALIB
-            for f = 1:ANALYS
-              curr[1,e,f] = (curr[1,e,f] - alph[f]) / beta[f]
-              curr[1,e,f] = (curr[1,e,f] - alph[f]) / beta[f]
-            end
+for (a, rana) in enumerate(RANGE)                                             # loop through the target parameters and
+  for d = 1:linum                                                             # isolate the nearest CUTOFF set of obs
+    vala = float(split(lines[d]))
+    valb = float(split(linez[d]))
+    cspd = (vala[OCUR]^2.0 + valb[OCUR]^2.0)^0.5
+    dist[d] = abs(rana - cspd)
+  end
+  lims = sort(dist)[chnk]
+
+  e = 1                                                                       # get cal/val parameters for this subset
+  for d = 1:linum                                                             # (possibly after recalibrating)
+    if dist[d] <= lims && e <= chnk
+      vala = float(split(lines[d]))
+      valb = float(split(linez[d]))
+      cspd = (vala[OCUR]^2.0 + valb[OCUR]^2.0)^0.5
+      curr[1,e,:] = [vala[TOTB] vala[OCUR]]
+      curr[2,e,:] = [vala[TOTA]       cspd]
+      if RECALIB
+        if GLOBAL
+          for f = 1:ANALYS
+            curr[1,e,f] = (curr[1,e,f] - alph[f]) / beta[f]
+            curr[2,e,f] = (curr[2,e,f] - alph[f]) / beta[f]
           end
-          e += 1
+        else
+          for f = 1:ANALYS
+cspd = (((vala[TOTB] - alpu[f]) / betu[f])^2.0 + ((valb[TOTB] - alpv[f]) / betv[f])^2.0)^0.5
+            localph = alpl[1] * cspd^2 + alpl[2] * cspd + alpl[3]
+            locbeta = betl[1] * cspd^2 + betl[2] * cspd + betl[3]
+            curr[1,e,f] = (curr[1,e,f] - localph) / locbeta
+cspd = (((vala[TOTA] - alpu[f]) / betu[f])^2.0 + ((valb[TOTA] - alpv[f]) / betv[f])^2.0)^0.5
+            localph = alpl[1] * cspd^2 + alpl[2] * cspd + alpl[3]
+            locbeta = betl[1] * cspd^2 + betl[2] * cspd + betl[3]
+            curr[2,e,f] = (curr[2,e,f] - localph) / locbeta
+          end
         end
       end
-      (allmas, allalp, allbet, allsig, allcor) = triple(curr, rsqr)
-
-      target[a,b,c,:] = [rana ranb ranc]
-      calval[a,b,c,:,ALPH] = allalp
-      calval[a,b,c,:,BETA] = allbet
-      calval[a,b,c,:,SIGM] = allsig
-      calval[a,b,c,:,CORR] = allcor
-      calval[a,b,c,:,MAIR] = allmas[:,1]
-      calval[a,b,c,:,MSPD] = allmas[:,2]
-      calval[a,b,c,:,MSST] = allmas[:,3]
-
-      if STORAGE
-        fpb = My.ouvre(ARGS[1] * ".cali", "w")
-        form = @sprintf("const %sA%c = [%15.8lf,      0.0]\n", varname[1:3], varname[5], allalp[1])
-        write(fpb, form)
-        form = @sprintf("const %sB%c = [%15.8lf,      1.0]\n", varname[1:3], varname[5], allbet[1])
-        write(fpb, form)
-        form = @sprintf("\ntarget params   OCUR,OLAT,OLON are %6.2f %6.2f %6.2f\n",   rana, ranb, ranc)
-        write(fpb, form)
-        form = @sprintf("  mean params   OCUR,OLAT,OLON are %6.2f %6.2f %6.2f\n\n", mean(allmas[:,1]), mean(allmas[:,2]), mean(allmas[:,3]))
-        write(fpb, form)
-        form = @sprintf("%22s %8s %8s %8s %8s\n", " ", "allalp", "allbet", "allsig", "allcor")
-        write(fpb, form)
-        for d = 1:ANALYS
-          form = @sprintf("%22s %8.2f %8.2f %8.2f %8.2f\n", DIRS[d], allalp[d], allbet[d], allsig[d], allcor[d])
-          write(fpb, form)
-        end
-        close(fpb)
-      end
-
-      @printf("cala = [%15.8lf]\n", allalp[1])
-      @printf("calb = [%15.8lf]\n", allbet[1])
-      @printf("\ntarget params   AIRT,WSPD,SSTT are %6.2f %6.2f %6.2f\n",   rana, ranb, ranc)
-      @printf("  mean params   AIRT,WSPD,SSTT are %6.2f %6.2f %6.2f\n\n", mean(allmas[:,1]), mean(allmas[:,2]), mean(allmas[:,3]))
-      @printf("%22s %8s %8s %8s %8s\n", " ", "allalp", "allbet", "allsig", "allcor")
-      for d = 1:ANALYS
-        @printf("%22s %8.2f %8.2f %8.2f %8.2f\n", DIRS[d], allalp[d], allbet[d], allsig[d], allcor[d])
-      end
+      e += 1
     end
+  end
+  (allmas, allalp, allbet, allsig, allcor) = triple(curr)
+
+  calval[a,:,ALPH] = allalp
+  calval[a,:,BETA] = allbet
+  calval[a,:,SIGM] = allsig
+  calval[a,:,CORR] = allcor
+  calval[a,:,MSPD] = allmas[:,1]
+
+  if GLOBAL || RECALIB
+    fpb = My.ouvre(ARGS[1] * ".cali.glob", "w")
+    form = @sprintf("const %sUA%c = [%15.8lf]\n", varname[1:2], varname[5], allalp[1])
+    write(fpb, form)
+    form = @sprintf("const %sUB%c = [%15.8lf]\n", varname[1:2], varname[5], allbet[1])
+    write(fpb, form)
+    form = @sprintf("\ntarget param   CSPD is %6.2f\n", rana)
+    write(fpb, form)
+    form = @sprintf("  mean param   CSPD is %6.2f\n\n", mean(allmas[:,1]))
+    write(fpb, form)
+    form = @sprintf("%33s %8s %8s %8s %8s\n", " ", "allalp", "allbet", "allsig", "allcor")
+    write(fpb, form)
+    for d = 1:ANALYS
+      form = @sprintf("%33s %8.3f %8.3f %8.3f %8.3f\n", DIRS[d], allalp[d], allbet[d], allsig[d], allcor[d])
+      write(fpb, form)
+    end
+    close(fpb)
+  else
+    for d = 1:ANALYS
+      fpb = My.ouvre(ARGS[1] * "." * DIRS[d] * ".cali.locl", "a")
+      form = @sprintf("%33s %15s %15s %8s %8s %8s %8s\n",
+        "analysis", "target value", "mean value", "allalp", "allbet", "allsig", "allcor")
+      a == 1 && write(fpb, form)
+      form = @sprintf("%33s %15.3f %15.3f %8.3f %8.3f %8.3f %8.3f\n",
+        DIRS[d], rana, mean(allmas[d,1]), allalp[d], allbet[d], allsig[d], allcor[d])
+      write(fpb, form)
+      close(fpb)
+    end
+  end
+
+  @printf("cala = [%15.8lf]\n", allalp[1])
+  @printf("calb = [%15.8lf]\n", allbet[1])
+  @printf("\ntarget param   CSPD is %6.2f\n", rana)
+  @printf("  mean param   CSPD is %6.2f\n\n", mean(allmas[:,1]))
+  @printf("%33s %8s %8s %8s %8s\n", " ", "allalp", "allbet", "allsig", "allcor")
+  for d = 1:ANALYS
+    @printf("%33s %8.3f %8.3f %8.3f %8.3f\n", DIRS[d], allalp[d], allbet[d], allsig[d], allcor[d])
   end
 end
 
-if GLOBAL  exit(0)  end
+if GLOBAL || RECALIB  exit(0)  end
 
-varair = Array(Float64, 0)                                                    # the sqerror closure requires data
-varspd = Array(Float64, 0)                                                    # arrays in global scope
-varsst = Array(Float64, 0)
-varcol = Array(Float64, 0)
+varspd = Array(Float64, 0)                                                    # the sqerror closure requires data
+varcol = Array(Float64, 0)                                                    # arrays in global scope
 
 function sqerror(coef::Array{Float64,1})                                      # define the least squares metric
   err = 0.0
-  for i in 1:length(varair)
-    res  = coef[1] * varair[i] * varair[i] + coef[2] * varspd[i] * varspd[i] + coef[3] * varsst[i] * varsst[i] +
-           coef[4] * varair[i] * varspd[i] + coef[5] * varair[i] * varsst[i] + coef[6] * varspd[i] * varsst[i] +
-           coef[7] * varair[i]             + coef[8] * varspd[i]             + coef[9] * varsst[i] + coef[10]
+  for i in 1:length(varspd)
+    res  = coef[1] * varspd[i]^2 + coef[2] * varspd[i] + coef[3]
     err += (varcol[i] - res)^2
   end
   return err
 end
 
 for a = 1:ANALYS                                                              # for each analysis, store the dependence
-  outfile = ARGS[1] * "." * DIRS[a]                                           # of the four triple-collocation statistics
-  fpa = My.ouvre(outfile, "w")                                                # in terms of second-order poynomial coeffs
-  for b = 1:4                                                                 # obtained using unconstrained optimization
-    varair = Array(Float64, 0)                                                # (so the stats' "hypercubes" are reduced to
-    varspd = Array(Float64, 0)                                                # variations on a multidimensional curve, but
-    varsst = Array(Float64, 0)                                                # with values everywhere in parameter space)
-    varcol = Array(Float64, 0)
-    for (c, ranc) in enumerate(RANGA)
-      for (d, rand) in enumerate(RANGB)
-        for (e, rane) in enumerate(RANGC)
-          push!(varair, calval[c,d,e,a,MAIR])
-          push!(varspd, calval[c,d,e,a,MSPD])
-          push!(varsst, calval[c,d,e,a,MSST])
-          push!(varcol, calval[c,d,e,a,b])
-        end
-      end
+  fpa = My.ouvre(ARGS[1] * "." * DIRS[a] * ".cali.locl", "a")                 # of the four triple-collocation statistics
+  for b = 1:4                                                                 # in terms of second-order poynomial coeffs
+    varspd = Array(Float64, 0)                                                # obtained using unconstrained optimization
+    varcol = Array(Float64, 0)                                                # (so the stats' "hypercubes" are reduced to
+    for (c, ranc) in enumerate(RANGE)                                         # variations on a multidimensional curve, but
+      push!(varspd, calval[c,a,MSPD])                                         # with values everywhere in parameter space)
+      push!(varcol, calval[c,a,b])
     end
-    res = optimize(sqerror, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], iterations = 10000)
+    res = optimize(sqerror, [0.0, 0.0, 0.0], iterations = 10000)
 
-    line = @sprintf("%15.8f %15.8f %15.8f %15.8f %15.8f %15.8f %15.8f %15.8f %15.8f %15.8f\n",
-      res.minimum[1], res.minimum[2], res.minimum[3], res.minimum[4], res.minimum[5],
-      res.minimum[6], res.minimum[7], res.minimum[8], res.minimum[9], res.minimum[10])
-    write(fpa, line)
-    print("$(DIRS[a]) $b $(show(res)) \n")
+    b == 1 && (stra = "const" ; strb = "A")
+    b == 2 && (stra = "const" ; strb = "B")
+    b == 3 && (stra = "     " ; strb = "S")
+    b == 4 && (stra = "     " ; strb = "C")
+    line = @sprintf("%s %sL%s%c = [%15.8f %15.8f %15.8f]\n",
+      stra, varname[1:2], strb, varname[5], res.minimum[1], res.minimum[2], res.minimum[3])
+    write(fpa, line) ; print("$(DIRS[a]) $b $(show(res)) \n")
   end
   close(fpa)
 end

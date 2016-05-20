@@ -4,7 +4,7 @@
  = trajectory files also exist) - RD August 2015
  =#
 
-if size(ARGS) != (0,)
+if (argc = length(ARGS)) != 0
   print("\nUsage: jj $(basename(@__FILE__))\n\n")
   exit(1)
 end

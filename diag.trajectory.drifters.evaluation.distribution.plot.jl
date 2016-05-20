@@ -14,7 +14,7 @@ const PARAMS           = 6
 const TIMES            = 2556                           # number of days during 2001-2007
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (6,)
+if (argc = length(ARGS)) != 6
   print("\nUsage: jjj $(basename(@__FILE__)) all.flux.daily.locate_2.0_calib.????.got2000\n\n")
   exit(1)
 end

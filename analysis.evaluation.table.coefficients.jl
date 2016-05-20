@@ -11,7 +11,7 @@ const COEF             = 10                             # number of polynomial c
 const MISS             = -9999.0                        # generic missing value
 const VARN             = ["Bias", "Slope", "RMSE", "Target Correlation"]
 
-(argc,) = size(ARGS) ; if argc == 0
+if (argc = length(ARGS)) == 0
   print("\nUsage: jjj $(basename(@__FILE__)) all.flux.daily.locate_2.0_calib.wspd.got2000_obs.comb.*\n\n")
   exit(1)
 end

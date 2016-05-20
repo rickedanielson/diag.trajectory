@@ -11,7 +11,7 @@ const PARAMS           = 2
 const TIMS             = 3408                           # number in timeseries
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (0,) 
+if (argc = length(ARGS)) != 0
   print("\nUsage: jjj $(basename(@__FILE__))\n\n")
   exit(1)
 end

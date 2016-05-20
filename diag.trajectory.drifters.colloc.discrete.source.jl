@@ -9,7 +9,7 @@ const UCUR             = 10                             # indecies of all data v
 const VCUR             = 11
 const MISS             = -9999.0                        # generic missing value
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs\n\n")
   exit(1)
 end

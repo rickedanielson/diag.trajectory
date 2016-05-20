@@ -9,7 +9,7 @@ const LEN              = 100
 const LOTS             = 1000
 const START            = 2                              # make START-1 a valid array index
 
-if size(ARGS) != (1,)
+if (argc = length(ARGS)) != 1
   print("\nUsage: julia $(basename(@__FILE__)) buoydata_1993_2012_drogON.asc\n\n")
   exit(1)
 end

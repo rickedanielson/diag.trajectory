@@ -175,22 +175,42 @@ wrkt ; parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.dri
        cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
        rm commands
 
-# perform a global triple collocation cal/val and evaluate the calibrated analyses using all.flux.daily.locate_2.0_calib
-wrkt ; cd all ; mkdir zali.recalib.false.iterate.false zali.recalib.false.iterate.true
-                mkdir  zali.recalib.true.iterate.false  zali.recalib.true.iterate.true ; cd ..
-       parallel --dry-run /home1/homedir1/perso/rdaniels/bin/diag.trajectory.drifters.colloc.discrete.triple.jl ::: all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_?ali?.????.got2000_obs.comb | grep drift | sort > commands
-       cat commands | /home5/begmeil/tools/gogolist/bin/gogolist.py -e julia
-       mv *cali zali.recalib.false.iterate.false                        (following "grep const *colloc.discrete.triple* | grep -i alib")
-       cd       zali.recalib.false.iterate.false ; cat *calib.ucur*cali *calib.vcur*cali | grep const
-                                                   cat *valid.ucur*cali *valid.vcur*cali | grep const
-       vi diag.trajectory.drifters.colloc.discrete.triple.jl
-       mv *cali zali.recalib.false.iterate.true                         (following "grep const *colloc.discrete.triple* | grep -i alib")
-       cd       zali.recalib.false.iterate.true  ; cat *calib.ucur*cali *calib.vcur*cali | grep const
-                                                   cat *valid.ucur*cali *valid.vcur*cali | grep const
-       vi diag.trajectory.drifters.colloc.discrete.triple.jl
-       mv *cali zali.recalib.true.iterate.false
-       cd       zali.recalib.true.iterate.false  ; diff zali.recalib.*.iterate.false/*calib.shfx*cali
-       mv *cali zali.recalib.true.iterate.true
-       cd       zali.recalib.true.iterate.true   ; diff zali.recalib.*.iterate.true/*calib.shfx*cali
-       wrkt ; rm commands
+# perform a global triple collocation cal/val (GLOBAL = true; RECALIB = false then true) and compare calibrated and uncalibrated RMSE
+wrkt ; mkdir all/zali.recalib.false all/zali.recalib.true
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.got2000_obs.comb
+       mv all/*cali.glob all/zali.recalib.false
+       cat               all/zali.recalib.false/*cali.glob | grep const
+       vi  diag.trajectory.drifters.colloc.discrete.triple.jl                 (and inject the various alpha and beta)
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.got2000_obs.comb
+       mv all/*cali.glob all/zali.recalib.true
+       cat               all/zali.recalib.false/*cali.glob | grep total
+       cat               all/zali.recalib.true/*cali.glob  | grep total
 
+# perform a local triple collocation cal/val (GLOBAL = false; RECALIB = false then true) and compare calibrated and uncalibrated RMSE
+wrkt ; mkdir all/zali.recalib.local
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.got2000_obs.comb
+       mv all/*cali.locl all/zali.recalib.false
+       cat               all/zali.recalib.false/*cali.locl | grep const
+       vi  diag.trajectory.drifters.colloc.discrete.triple.jl                 (and inject the various alpha and beta)
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.vcur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.ucur.got2000_obs.comb
+       jjj diag.trajectory.drifters.colloc.discrete.triple.jl all/buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_valid.vcur.got2000_obs.comb
+       mv all/*cali.glob all/zali.recalib.local
+       cat               all/zali.recalib.false/*cali.glob | grep total
+       cat               all/zali.recalib.true/*cali.glob  | grep total
+       cat               all/zali.recalib.local/*cali.glob | grep total
+
+# plot local calibration and performance as a function of the variable of interest
+wrkt ; cd all
+       jjj diag.trajectory.drifters.evaluation.calval.plot.jl all/zali.recalib.false/*cali.locl
+       mv 
