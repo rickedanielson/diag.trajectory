@@ -36,6 +36,8 @@ fpa = My.ouvre("$(ARGS[1])/$(ARGS[2])", "r")                                  # 
 files = readlines(fpa) ; close(fpa)                                           # and process each timeseries
 for fila in files
   fila = strip(fila)
+  if isfile("$(ARGS[1])/$fila.bef") && isfile("$(ARGS[1])/$fila.aft")  continue  end
+
   fpa = My.ouvre("$(ARGS[1])/$fila", "r", false)
   lines = readlines(fpa) ; close(fpa)
   for (a, line) in enumerate(lines)

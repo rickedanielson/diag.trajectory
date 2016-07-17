@@ -40,21 +40,24 @@ for line in eachline(fpa)                                                     # 
   out = @sprintf("%s %9.3f %9.3f %9.3f", dat, lat, lon, cur)
   tmp = @sprintf("%9.3f.%9.3f", lat, lon) ; tail = replace(tmp, " ", ".")
 
-  bef = fill(MISS, dirn)                                                      # add analysis bef/aft to insitu data
+  bef = fill(MISS, dirn)                                                      # add analysis bef/now/aft to insitu data
+  now = fill(MISS, dirn)
   aft = fill(MISS, dirn)
   flag = true
   for (a, dira) in enumerate(dirs)
     tmp = split(read_nth_line("$dira/$dira.$tail.bef", datind)) ; bef[a] = float(tmp[vind]) ; chkbef = float(tmp[vine])
     newdat = tmp[1] ; if dat != newdat  println("ERROR : $dat != $newdat") ; exit(-1)  end
+    tmp = split(read_nth_line("$dira/$dira.$tail",     datind)) ; now[a] = float(tmp[vind]) ; chknow = float(tmp[vine])
+    newdat = tmp[1] ; if dat != newdat  println("ERROR : $dat != $newdat") ; exit(-1)  end
     tmp = split(read_nth_line("$dira/$dira.$tail.aft", datind)) ; aft[a] = float(tmp[vind]) ; chkaft = float(tmp[vine])
     newdat = tmp[1] ; if dat != newdat  println("ERROR : $dat != $newdat") ; exit(-1)  end
-    if bef[a] < -333.0 || bef[a] > 333.0 || aft[a] < -333.0 || aft[a] > 333.0 ||
-       chkbef < -333.0 || chkbef > 333.0 || chkaft < -333.0 || chkaft > 333.0  flag = false  end
+    if bef[a] < -333.0 || bef[a] > 333.0 || now[a] < -333.0 || now[a] > 333.0 || aft[a] < -333.0 || aft[a] > 333.0 ||
+       chkbef < -333.0 || chkbef > 333.0 || chknow < -333.0 || chknow > 333.0 || chkaft < -333.0 || chkaft > 333.0  flag = false  end
   end
 
   if flag                                                                     # and store the line if all values exist
     for (a, dira) in enumerate(dirs)
-      tmp = @sprintf(" %9.3f %9.3f", bef[a], aft[a]) ; out *= tmp
+      tmp = @sprintf(" %9.3f %9.3f %9.3f", bef[a], now[a], aft[a]) ; out *= tmp
     end
     out *= "\n" ; write(fpb, out)
   end
