@@ -95,6 +95,8 @@ obsx = refx+1.9 ; obsy = refy-0.2 ; "set line 14" ; "draw mark 3 "obsx" "obsy" "
 
 say "found "counta" positions and "countb" observations in "dotfile
 *"run gui_print_colour "dotfile
-say "gxprint plot.trajectory.drifters.dots."dotfile".png png white x1100 y850"
-    "gxprint plot.trajectory.drifters.dots."dotfile".png png white x1100 y850"
+*say "gxprint plot.trajectory.drifters.dots."dotfile".png png white x1100 y850"
+*    "gxprint plot.trajectory.drifters.dots."dotfile".png png white x1100 y850"
+say "gxprint "dotfile".png png white x1100 y850"
+    "gxprint "dotfile".png png white x1100 y850"
 "quit"

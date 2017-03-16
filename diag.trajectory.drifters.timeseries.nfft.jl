@@ -57,11 +57,11 @@ for line in eachline(fpa)                                                     # 
     end
   end
 
-  if sum(mask) < CUTOFF                                                       # augment one of the subset list files
+  if sum(mask) < 1 # CUTOFF                                                       # augment one of the subset list files
     write(fpc, line)                                                          # and only create a spectra file if all
   else                                                                        # analyses have good temporal coverage
     write(fpb, line)
-
+#=
     half = div(TIMLEN, 2)
     spec = Array(Float64, half + 1, dirn)
     datb = Array(Float64, 0)
@@ -120,6 +120,7 @@ for line in eachline(fpa)                                                     # 
       write(fpd, tmp)
     end
     close(fpd)
+=#
   end
 end
 

@@ -14,13 +14,14 @@ const OCUR             = 4                              # then five buoy paramet
 const MINSUM           = 10                             # minimum number of samples for an average
 const LINWID           = 3                              # plotting line width
 const DOTSIZE          = 0.2                            # size of scatterplot dots
-const POSTCAL          = true                           # include a bottom row of plots after adjustment
 const MISS             = -9999.0                        # generic missing value
 
 if (argc = length(ARGS)) != 2
   print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_extra.ucur.got2000_obs.comb v2.0_global_025_deg_total_15m\n\n")
   exit(1)
 end
+contains(ARGS[1], ".ucur") && (ARGS222 = replace(ARGS[1], "ucur", "vcur"))
+contains(ARGS[1], ".vcur") && (ARGS222 = replace(ARGS[1], "vcur", "ucur"))
 
 analysi = "GlobCurrent"
 observr = "Drifter"
@@ -39,7 +40,7 @@ step = 0.02 ; bound = collect(-4.0:step:4.0)
 cols = ["red",  "blue", "green", "orange"]
 lims = [    1,      10,     100,     1000]
 
-gridbefaftnow = zeros(length(bound), length(bound), 2)                        # read the unadjusted before and after grids
+gridbefaftnow = zeros(length(bound), length(bound), 2)                        # read the unadjusted zonal before and after grids
 gridbefaftobs = zeros(length(bound), length(bound), 2)
 gridbefaftone = zeros(length(bound), length(bound), 1)
 gridnowobsone = zeros(length(bound), length(bound), 1)
@@ -53,11 +54,11 @@ for (a, vala) in enumerate(bound)
 end
 close(fpa)
 
-gricbefaftnow = zeros(length(bound), length(bound), 2)                        # and the adjusted before and after grids
+gricbefaftnow = zeros(length(bound), length(bound), 2)                        # and the unadjusted meridional before and after grids
 gricbefaftobs = zeros(length(bound), length(bound), 2)
 gricbefaftone = zeros(length(bound), length(bound), 1)
 gricnowobsone = zeros(length(bound), length(bound), 1)
-fname = ARGS[1] * "." * ARGS[2] * ".extra.dau"
+fname = ARGS222 * "." * ARGS[2] * ".extra.dat"
 fpa = My.ouvre(fname, "r")
 for (a, vala) in enumerate(bound)
   for (b, valb) in enumerate(bound)
@@ -77,7 +78,6 @@ sumobsnow = zeros(length(bound)) ; conobsnow = zeros(length(bound))
 sumobsaft = zeros(length(bound)) ; conobsaft = zeros(length(bound))
 sumbefaft = zeros(length(bound)) ; conbefaft = zeros(length(bound))
 sumaftbef = zeros(length(bound)) ; conaftbef = zeros(length(bound))
-cutbefnow = zeros(length(bound)) ; cutaftnow = zeros(length(bound))
 fname = ARGS[1] * "." * ARGS[2] * ".extra.sum"
 fpa = My.ouvre(fname, "r")
 for (a, vala) in enumerate(bound)
@@ -86,8 +86,7 @@ for (a, vala) in enumerate(bound)
    sumbefobs[a], conbefobs[a], sumaftobs[a], conaftobs[a],
    sumobsbef[a], conobsbef[a], sumobsaft[a], conobsaft[a],
    sumbefaft[a], conbefaft[a], sumaftbef[a], conaftbef[a],
-   sumnowobs[a], connowobs[a], sumobsnow[a], conobsnow[a],
-                 cutbefnow[a],               cutaftnow[a]) = float(split(line))
+   sumnowobs[a], connowobs[a], sumobsnow[a], conobsnow[a]) = float(split(line))
 end
 close(fpa)
 
@@ -101,8 +100,7 @@ sucobsnow = zeros(length(bound)) ; cocobsnow = zeros(length(bound))
 sucobsaft = zeros(length(bound)) ; cocobsaft = zeros(length(bound))
 sucbefaft = zeros(length(bound)) ; cocbefaft = zeros(length(bound)) 
 sucaftbef = zeros(length(bound)) ; cocaftbef = zeros(length(bound))
-cuubefnow = zeros(length(bound)) ; cuuaftnow = zeros(length(bound))
-fname = ARGS[1] * "." * ARGS[2] * ".extra.sun"
+fname = ARGS222 * "." * ARGS[2] * ".extra.sum"
 fpa = My.ouvre(fname, "r")
 for (a, vala) in enumerate(bound)
   line = readline(fpa)
@@ -110,8 +108,7 @@ for (a, vala) in enumerate(bound)
    sucbefobs[a], cocbefobs[a], sucaftobs[a], cocaftobs[a],
    sucobsbef[a], cocobsbef[a], sucobsaft[a], cocobsaft[a],
    sucbefaft[a], cocbefaft[a], sucaftbef[a], cocaftbef[a],
-   sucnowobs[a], cocnowobs[a], sucobsnow[a], cocobsnow[a],
-                 cuubefnow[a],               cuuaftnow[a]) = float(split(line))
+   sucnowobs[a], cocnowobs[a], sucobsnow[a], cocobsnow[a]) = float(split(line))
 end
 close(fpa)
 
@@ -150,34 +147,24 @@ end
 (avcbefaft, bncbefaft) = smooth(bound, sucbefaft, cocbefaft)
 (avcaftbef, bncaftbef) = smooth(bound, sucaftbef, cocaftbef)
 
-fname = ARGS[1] * "." * ARGS[2] * ".extra.reg"                                # finally read the regression coefficient pairs
+fname = ARGS[1] * "." * ARGS[2] * ".extra.reg"                                # finally read the zonal regression coefficient pairs
 fpa = My.ouvre(fname, "r")
 line = readline(fpa)
 (intbefnow, slobefnow, intaftnow, sloaftnow,
  intbefobs, slobefobs, intaftobs, sloaftobs,
  intobsbef, sloobsbef, intobsaft, sloobsaft,
  intbefaft, slobefaft, intaftbef, sloaftbef,
- intnowobs, slonowobs, intobsnow, sloobsnow,
-            covbefnow,            covaftnow,
-            covbefobs,            covaftobs,
-            covobsbef,            covobsaft,
-            covbefaft,            covaftbef,
-            covnowobs,            covobsnow) = float(split(line))
+ intnowobs, slonowobs, intobsnow, sloobsnow) = float(split(line))
 close(fpa)
 
-fname = ARGS[1] * "." * ARGS[2] * ".extra.reh"                                # and the corresponding adjusted pairs
+fname = ARGS222 * "." * ARGS[2] * ".extra.reg"                                # and the corresponding meridional pairs
 fpa = My.ouvre(fname, "r")
 line = readline(fpa)
 (incbefnow, slcbefnow, incaftnow, slcaftnow,
  incbefobs, slcbefobs, incaftobs, slcaftobs,
  incobsbef, slcobsbef, incobsaft, slcobsaft,
  incbefaft, slcbefaft, incaftbef, slcaftbef,
- incnowobs, slcnowobs, incobsnow, slcobsnow,
-            cowbefnow,            cowaftnow,
-            cowbefobs,            cowaftobs,
-            cowobsbef,            cowobsaft,
-            cowbefaft,            cowaftbef,
-            cownowobs,            cowobsnow) = float(split(line))
+ incnowobs, slcnowobs, incobsnow, slcobsnow) = float(split(line))
 close(fpa)
 
 function point(bound::Array{Float64,1}, grid::Array{Float64,3}, plotind::Int64)
@@ -195,42 +182,28 @@ function point(bound::Array{Float64,1}, grid::Array{Float64,3}, plotind::Int64)
   end
   return(xpts, ypts, zpts)
 end
-#=
-out = FramedPlot(xrange = (0,1), yrange = (0,1))
-#setattr(out.x1, "draw_axis", false) ; setattr(out.x2, "draw_axis", false)
-#setattr(out.y1, "draw_axis", false) ; setattr(out.y2, "draw_axis", false)
-setattr(out.x1, "draw_ticks", false) ; setattr(out.x2, "draw_ticks", false)
-setattr(out.y1, "draw_ticks", false) ; setattr(out.y2, "draw_ticks", false)
-setattr(out.x1, "draw_ticklabels", false) ; setattr(out.x2, "draw_ticklabels", false)
-setattr(out.y1, "draw_ticklabels", false) ; setattr(out.y2, "draw_ticklabels", false)
-add(out, Points(0.5, 0.5, color="white"))
-#x = linspace(0, 10)
-##p1 = Points(0.5, 0.5, color="white")
-#p2 = plot(x, sin(x), color="red")
-#inset = PlotInset((0.1, 0.6), (0.7, 0.9), p2)
-#add(out, inset)
-#ppp = out
-#if false
-=#
-POSTCAL && (ppp = Winston.Table(2,5) ; setattr(ppp, "cellpadding", -0.6))
-POSTCAL || (ppp = Winston.Table(1,5)) #; setattr(ppp, "cellpadding", -0.5)    # and then create the unadjusted BEF/AFT
-for z = 1:2                                                                   # vs NOW scatterplots, respectively (make
-  (xpts, ypts, zpts) = point(bound, gridbefaftnow, z)                         # xpts and ypts refer to grid midpoints)
-   xpts += 0.5 * step
-   ypts += 0.5 * step
 
-  z == 1 && (plotnam = "Forecast vs " * analysi)# * "\n" * varname)
-  z == 2 && (plotnam =  "Revcast vs " * analysi)# * "\n" * varname)
+ppp = Winston.Table(1,2) ; setattr(ppp, "cellpadding", -0.6)
+for z = 1:2                                                                   # then plot NOW vs OBS scatterplots for
+  z == 1 && ((xpts, ypts, zpts) = point(bound, gridnowobsone, 1))             # the zonal and meridional components
+  z == 2 && ((xpts, ypts, zpts) = point(bound, gricnowobsone, 1))
+  xpts += 0.5 * step
+  ypts += 0.5 * step
+
+  z == 1 && (plotnam = "Zonal GlobCurrent vs Drifter (ms^{-1})")
+  z == 2 && (plotnam = "Meridional GlobCurrent vs Drifter (ms^{-1})")
   tmp = Winston.FramedPlot(xrange = (xmin,xmax), yrange = (ymin,ymax), title = plotnam)
   setattr(tmp.x1, "draw_subticks", false) ; setattr(tmp.x2, "draw_subticks", false)
   setattr(tmp.y1, "draw_subticks", false) ; setattr(tmp.y2, "draw_subticks", false)
-# POSTCAL && setattr(tmp.x1, :ticklabels_style, Dict{Symbol, Any}(:color => "lightgray"))
-   z == 2 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
+# z == 1 && setattr(tmp.x1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
+  z == 2 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
   ppp[1,z] = Winston.add(tmp)
 
-  z == 1 && (inter = intbefnow ; slope = slobefnow)
-  z == 2 && (inter = intaftnow ; slope = sloaftnow)
-  tmp = Winston.Slope(slope, (0, inter), kind = "solid", "linewidth", LINWID, "color", parse(Winston.Colorant, "green"))
+  z == 1 && (inter = intnowobs ; slope = slonowobs ; intes = intobsnow ; slopf = sloobsnow)
+  z == 2 && (inter = incnowobs ; slope = slcnowobs ; intes = incobsnow ; slopf = slcobsnow)
+  tmp = Winston.Slope(      slope, (0, inter), kind = "solid", "linewidth", LINWID, "color", parse(Winston.Colorant, "green"))
+        Winston.add(ppp[1,z], tmp)
+  tmp = Winston.Slope(1.0 / slopf, (intes, 0), kind = "solid", "linewidth", LINWID, "color", parse(Winston.Colorant, "green"))
         Winston.add(ppp[1,z], tmp)
   tmp = Winston.Slope(     1, (0,    0), kind = "solid")
         Winston.add(ppp[1,z], tmp)
@@ -245,116 +218,28 @@ for z = 1:2                                                                   # 
     end
   end
   if z == 1
-    tmp = Winston.Curve(bndbefnow, avgbefnow, kind = "solid", "linewidth", LINWID)
+    tmp = Winston.Curve(bndnowobs, avgnowobs, kind = "solid", "linewidth", LINWID) 
           Winston.add(ppp[1,z], tmp)
-    tmp = Winston.Curve(bound, cutbefnow*100, kind = "solid", "linewidth", LINWID)
+    tmp = Winston.Curve(avgobsnow, bndobsnow, kind = "solid", "linewidth", LINWID)
           Winston.add(ppp[1,z], tmp)
-    tmp = Winston.PlotLabel(0.85, 0.10, "a", "texthalign", "center", "size", 3.0)
+    tmp = Winston.PlotLabel(0.80, 0.10, "a", "texthalign", "center", "size", 3.0)
           Winston.add(ppp[1,z], tmp)
   else
-    tmp = Winston.Curve(bndaftnow, avgaftnow, kind = "solid", "linewidth", LINWID)
+    tmp = Winston.Curve(bncnowobs, avcnowobs, kind = "solid", "linewidth", LINWID)
           Winston.add(ppp[1,z], tmp)
-    tmp = Winston.Curve(bound, cutaftnow*100, kind = "solid", "linewidth", LINWID)
+    tmp = Winston.Curve(avcobsnow, bncobsnow, kind = "solid", "linewidth", LINWID)
           Winston.add(ppp[1,z], tmp)
-    tmp = Winston.PlotLabel(0.85, 0.10, "b", "texthalign", "center", "size", 3.0)
-          Winston.add(ppp[1,z], tmp)
-    tmp = Winston.PlotLabel(0.20, 0.90, varname, "texthalign", "left", "size", 3.0)
+    tmp = Winston.PlotLabel(0.80, 0.10, "b", "texthalign", "center", "size", 3.0)
           Winston.add(ppp[1,z], tmp)
   end
 end
 
-if POSTCAL
-for z = 1:2                                                                   # add the adjusted BEF/AFT vs NOW scatterplots
-  (xpts, ypts, zpts) = point(bound, gricbefaftnow, z)
-   xpts += 0.5 * step
-   ypts += 0.5 * step
+xyzzy = ARGS[1] * "." * ARGS[2] * ".nowobs.png"
+print("writing $xyzzy\n")
+Winston.savefig(ppp, xyzzy, "width", 600, "height", 400)
+exit(0)
 
-  z == 1 && (plotnam = "Adj-forecast vs " * analysi)# * "\n" * varname)
-  z == 2 && (plotnam =  "Adj-revcast vs " * analysi)# * "\n" * varname)
-  tmp = Winston.FramedPlot(xrange = (xmin,xmax), yrange = (ymin,ymax), title = plotnam)
-  setattr(tmp.x1, "draw_subticks", false) ; setattr(tmp.x2, "draw_subticks", false)
-  setattr(tmp.y1, "draw_subticks", false) ; setattr(tmp.y2, "draw_subticks", false)
-#           setattr(tmp.x1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
-  z == 2 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
-  ppp[2,z] = Winston.add(tmp)
-
-  z == 1 && (inter = incbefnow ; slope = slcbefnow)
-  z == 2 && (inter = incaftnow ; slope = slcaftnow)
-  tmp = Winston.Slope(slope, (0, inter), kind = "solid", "linewidth", LINWID, "color", parse(Winston.Colorant, "green"))
-        Winston.add(ppp[2,z], tmp)
-  tmp = Winston.Slope(     1, (0,    0), kind = "solid")
-        Winston.add(ppp[2,z], tmp)
-
-  for (a, color) in enumerate(cols)
-    mask = zpts .>= lims[a]
-    tmp = Winston.Points(xpts[mask], ypts[mask], kind = "filled circle", "color", parse(Winston.Colorant, cols[a]), symbolsize = DOTSIZE)
-          Winston.add(ppp[2,z], tmp)
-  end
-  if z == 1
-    tmp = Winston.Curve(bncbefnow, avcbefnow, kind = "solid", "linewidth", LINWID)
-          Winston.add(ppp[2,z], tmp)
-    tmp = Winston.PlotLabel(0.85, 0.10, "c", "texthalign", "center", "size", 3.0)
-          Winston.add(ppp[2,z], tmp)
-  else
-    tmp = Winston.Curve(bncaftnow, avcaftnow, kind = "solid", "linewidth", LINWID)
-          Winston.add(ppp[2,z], tmp)
-    tmp = Winston.PlotLabel(0.85, 0.10, "d", "texthalign", "center", "size", 3.0)
-          Winston.add(ppp[2,z], tmp)
-  end
-end
-end
-
-for z = 1:2                                                                   # add the unadjusted BEF/AFT vs OBS scatterplots
-  (xpts, ypts, zpts) = point(bound, gridbefaftobs, z)
-   xpts += 0.5 * step
-   ypts += 0.5 * step
-
-  z == 1 && (plotnam = "Forecast vs " * observr)# * "\n" * varname)
-  z == 2 && (plotnam =  "Revcast vs " * observr)# * "\n" * varname)
-  tmp = Winston.FramedPlot(xrange = (xmin,xmax), yrange = (ymin,ymax), title = plotnam)
-  setattr(tmp.x1, "draw_subticks", false) ; setattr(tmp.x2, "draw_subticks", false)
-  setattr(tmp.y1, "draw_subticks", false) ; setattr(tmp.y2, "draw_subticks", false)
-# POSTCAL && setattr(tmp.x1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
-   z == 2 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "white"))
-  ppp[1,z+2] = Winston.add(tmp)
-
-  z == 1 && (inter = intbefobs ; slope = slobefobs ; intes = intobsbef ; slopf = sloobsbef)
-  z == 2 && (inter = intaftobs ; slope = sloaftobs ; intes = intobsaft ; slopf = sloobsaft)
-  tmp = Winston.Slope(      slope, (0, inter), kind = "solid", "linewidth", LINWID, "color", parse(Winston.Colorant, "green"))
-        Winston.add(ppp[1,z+2], tmp)
-  tmp = Winston.Slope(1.0 / slopf, (intes, 0), kind = "solid", "linewidth", LINWID, "color", parse(Winston.Colorant, "green"))
-        Winston.add(ppp[1,z+2], tmp)
-  tmp = Winston.Slope(     1, (0,    0), kind = "solid")
-        Winston.add(ppp[1,z+2], tmp)
-
-  for (a, color) in enumerate(cols)
-    mask = zpts .>= lims[a]
-    tmp = Winston.Points(xpts[mask], ypts[mask], kind = "filled circle", "color", parse(Winston.Colorant, cols[a]), symbolsize = DOTSIZE)
-          Winston.add(ppp[1,z+2], tmp)
-    if z == 1
-      tmp = Winston.PlotLabel(0.08, 1.00 - a * 0.07, "<span foreground=\"$(cols[length(cols) - a + 1])\">\\geq $(lims[length(cols) - a + 1])</span>", "texthalign", "left", "size", 3.0)
-            Winston.add(ppp[1,z+2], tmp)
-    end
-  end
-  if z == 1
-    tmp = Winston.Curve(bndbefobs, avgbefobs, kind = "solid", "linewidth", LINWID) 
-          Winston.add(ppp[1,z+2], tmp)
-    tmp = Winston.Curve(avgobsbef, bndobsbef, kind = "solid", "linewidth", LINWID)
-          Winston.add(ppp[1,z+2], tmp)
-    tmp = Winston.PlotLabel(0.85, 0.10, "a", "texthalign", "center", "size", 3.0)
-          Winston.add(ppp[1,z+2], tmp)
-  else
-    tmp = Winston.Curve(bndaftobs, avgaftobs, kind = "solid", "linewidth", LINWID)
-          Winston.add(ppp[1,z+2], tmp)
-    tmp = Winston.Curve(avgobsaft, bndobsaft, kind = "solid", "linewidth", LINWID)
-          Winston.add(ppp[1,z+2], tmp)
-    tmp = Winston.PlotLabel(0.85, 0.10, "b", "texthalign", "center", "size", 3.0)
-          Winston.add(ppp[1,z+2], tmp)
-    tmp = Winston.PlotLabel(0.20, 0.90, varname, "texthalign", "left", "size", 3.0)
-          Winston.add(ppp[1,z+2], tmp)
-  end
-end
-
+#=
 for z = 1:1                                                                   # add the unadjusted BEF vs AFT scatterplot
   (xpts, ypts, zpts) = point(bound, gridbefaftone, z)
    xpts += 0.5 * step
@@ -474,74 +359,9 @@ for z = 1:1                                                                   # 
 end
 end
 
-#end
-#inset = PlotInset((0.1, 0.9), (0.1, 0.6), ppp)
-#add(out, inset)
-
-xyzzy = ARGS[1] * "." * ARGS[2] * ".extra.png"
+xyzzy = ARGS[1] * "." * ARGS[2] * ".nowobs.png"
 print("writing $xyzzy\n")
 POSTCAL && Winston.savefig(ppp, xyzzy, "width", 2100, "height", 1000)
 POSTCAL || Winston.savefig(ppp, xyzzy, "width", 2100, "height",  500)
 exit(0)
-
-#=
-    ump = Array(Any, length(cols))
-    ump[a] = Winston.Curve(specval[1:end,z], spectra[a,1:end,z], "color", parse(Winston.Colorant, cols[b]))
-             style(ump[a], kind = kynd[b])
-             setattr(ump[a], label = "($(specstr[a,z])) $(dirs[a])")
-             Winston.add(ppp[tpos...], ump[a])
-    b += 1
-  end
-  tmp = Winston.Legend(.23, .92, Any[ump[order[1]], ump[order[2]], ump[order[3]], ump[order[4]]])
-        Winston.add(ppp[tpos...], tmp)
-  tmp = Winston.Legend(.58, .92, Any[ump[order[5]], ump[order[6]], ump[order[7]], ump[order[8]]])
-        Winston.add(ppp[tpos...], tmp)
-
-          title="$varname Spectra (dB)", xlog = true,
-          xlabel="Timescale (days)", xrange = (1/1000,1/2), yrange = (ymin,ymax))
-          xlog = true, xrange = (1/1000,1/2), yrange = (ymin,ymax))
-  setattr(tmp.x1, "ticks",          xposa) ; setattr(tmp.x2, "ticks",          xposb) ; setattr(tmp.y1, "ticks",          yposa)
-  setattr(tmp.x1, "tickdir",            1) ; setattr(tmp.x2, "tickdir",           -1) ; setattr(tmp.y1, "tickdir",            1)
-  setattr(tmp.x1, "ticklabels_offset",  0) ; setattr(tmp.x2, "ticklabels_offset", -7) ; setattr(tmp.y1, "ticklabels_offset",  0)
-  setattr(tmp.x1, "ticklabels",     xlaba) ; setattr(tmp.x2, "ticklabels",     xlabb) ; setattr(tmp.y1, "ticklabels",     ylaba)
-  setattr(tmp.x1, "draw_subticks",  false) ; setattr(tmp.x2, "draw_subticks",   true) ; setattr(tmp.y1, "draw_subticks",   true)
-  tpos[1] <= 2 && setattr(tmp.x1, :ticklabels_style, Dict{Symbol, Any}(:color => "transparent"))
-  tpos[1] >= 2 && setattr(tmp.x2, :ticklabels_style, Dict{Symbol, Any}(:color => "transparent"))
-  tpos[2] == 1 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "black"))
-  tpos[2] == 2 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "transparent"))
-
-# setattr(tmp.x1, "tickdir",           -1) ; setattr(tmp.x2, "tickdir",           -1) ; setattr(tmp.y1, "tickdir",            1) ; setattr(tmp.y2, "tickdir",           -1)
-# setattr(tmp.x1, "ticklabels_offset",  0) ; setattr(tmp.x2, "ticklabels_offset", -7) ; setattr(tmp.y1, "ticklabels_offset",  0) ; setattr(tmp.y2, "ticklabels_offset", -7)
-# setattr(tmp.x1, "draw_subticks",  false) ; setattr(tmp.x2, "draw_subticks",   true) ; setattr(tmp.y1, "draw_subticks",  false) ; setattr(tmp.y1, "draw_subticks",   true)
-#           setattr(tmp.x1, :ticklabels_style, Dict{Symbol, Any}(:color => "antiquewhite"))
-# z == 1 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "black"))
-# z == 2 && setattr(tmp.y1, :ticklabels_style, Dict{Symbol, Any}(:color => "antiquewhite"))
-#           setattr(tmp.x1, "draw_subticks", false)
-# z == 1 && setattr(tmp.y1, "draw_subticks",  true)
-# z == 2 && setattr(tmp.y1, "draw_subticks", false)
-# if z == 2
-# tmp = Winston.PlotLabel(0.50, 0.90, plotitle, "texthalign", "center", "size", 2.0)
-#       Winston.add(ppp[1,z], tmp)
-# end
-
-  cols = ["red",  "blue", "green", "orange"]
-  lims = [    1,      10,     100,     1000]
-  for (a, color) in enumerate(cols)
-    mask = zpts .>= lims[a]
-    tmp = Winston.Points(xpts[mask], ypts[mask], kind = "filled circle", "color", parse(Winston.Colorant, cols[a]), symbolsize = 0.1)
-          Winston.add(ppp[1,z], tmp)
-    if z == 1
-      tmp = Winston.Curve(bbndb, avgb, kind = "solid")
-            Winston.add(ppp[1,z], tmp)
-#     tmp = Winston.PlotLabel(0.08, 1.00 - a * 0.07, "<span foreground=\"$(cols[length(cols) - a + 1])\">\\geq $(lims[length(cols) - a + 1])</span>", "texthalign", "left", "size", 3.0)
-#           Winston.add(ppp[1,z], tmp)
-    end
-    if z == 2
-      tmp = Winston.Curve(bbnda, avga, kind = "solid")
-            Winston.add(ppp[1,z], tmp)
-    end
-  end
-
-  tmp = Winston.PlotLabel(0.50, 0.90, plotitle, "texthalign", "center", "size", 2.0)
-        Winston.add(ppp[2,z], tmp)
 =#

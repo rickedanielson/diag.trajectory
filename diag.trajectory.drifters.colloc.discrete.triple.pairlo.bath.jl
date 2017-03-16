@@ -9,7 +9,7 @@
  = to assess global performance - RD June, November 2016.
  =#
 
-using My, Optim, Winston, RCall ; R"library(DetMCD)"
+using My, Optim, Winston, RCall, NetCDF ; R"library(DetMCD)"
 const ODAT             = 1                              # identify indecies of the input data:
 const OLAT             = 2                              # date/lat/lon/obs on the collocation grid
 const OLON             = 3
@@ -20,11 +20,10 @@ const EXTRA            = true                           # recalibrate the extrap
 const MCDTRIM          = 0.95                           # Minimum Covariance Determinant trimming (nonoutlier percent)
 const SDTRIM           = 6.0                            # standard deviation trimming limit
 
-if (argc = length(ARGS)) != 2 && (argc = length(ARGS)) != 3
-  print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb v2.0_global_025_deg_total_15m [.agulhas]\n\n")
+if (argc = length(ARGS)) != 2
+  print("\nUsage: jjj $(basename(@__FILE__)) buoydata_1993_2014_drogON.asc.nonmdt.locate_2.0_calib.ucur.got2000_obs.comb v2.0_global_025_deg_total_15m\n\n")
   exit(1)
 end
-regionlab = "" ; length(ARGS) == 3 && (regionlab = ARGS[3])
 
 shift = -1
 ARGS[2] == "v2.0_global_025_deg_ekman_15m"   && (shift =  0)
@@ -130,8 +129,10 @@ end
  = main program
  =#
 
-const RANGE            = 0.1:0.01:1.1                   # target sampling range for current speed
-const CUTOFF           = 200                            # number of collocations in a subset
+const RANGE            = 100.0:50.0:5000.0              # target sampling range for current speed
+const CUTOFF           = 400                            # number of collocations in a subset
+const LATS             = 720                            # number of grid latitudes
+const LONS             = 1440                           # number of grid longitudes
 
 const MEMO             = 1                              # center-of-mass parameter
 const MEMB             = 2                              # error model x = ALPH + BETA * truth + error
@@ -144,6 +145,12 @@ const BETA             = 3                              # error model x = ALPH +
 const SIGM             = 4                              # triple coll RMSE
 const CORR             = 5                              # triple coll correlation coefficient
 const PARS             = 5                              # number of triple collocation parameters
+
+utfile = "/home/ricani/data/topography/elev.0.25-deg.nc"
+#utfile = "/home/ricani/data/topography/fractional_land.0.25-deg.nc.dist.to.coast.nc"
+varb = -map(Float64, ncread(utfile, "data", start=[1,1,1], count=[LONS,LATS,1])[:,:,1])
+lats =  map(Float64, ncread(utfile,  "lat", start=[1],     count=[LATS]))
+lons =  map(Float64, ncread(utfile,  "lon", start=[1],     count=[LONS]))
 
 ARGS333 = replace(ARGS[1], "calib", "valid")                                  # read both sets of collocations
 fpa    = My.ouvre(ARGS[1], "r") ; tinea = readlines(fpa) ; close(fpa)
@@ -193,14 +200,22 @@ refb = Array(Float64, tinumb)                                                 # 
 for a = 1:tinuma
   vala = float(split(tinea[a]))
   valb = float(split(tinec[a]))
-  refa[a] = (vala[OCUR]^2.0 + valb[OCUR]^2.0)^0.5
-# refa[a] = (vala[TOTN]^2.0 + valb[TOTN]^2.0)^0.5
+  vala[3] < 0 && (vala[3] += 360.0)
+  latind = map(Int64, 1 + ( 89.875 - vala[2]) / 0.25)
+  lonind = map(Int64, 1 + (vala[3] -   0.125) / 0.25)
+  refa[a] = varb[lonind,latind]
+# refa[a] = (vala[OCUR]^2.0 + valb[OCUR]^2.0)^0.5
+##refa[a] = (vala[TOTN]^2.0 + valb[TOTN]^2.0)^0.5
 end
 for a = 1:tinumb
   vala = float(split(tineb[a]))
   valb = float(split(tined[a]))
-  refb[a] = (vala[OCUR]^2.0 + valb[OCUR]^2.0)^0.5
-# refb[a] = (vala[TOTN]^2.0 + valb[TOTN]^2.0)^0.5
+  vala[3] < 0 && (vala[3] += 360.0)
+  latind = map(Int64, 1 + ( 89.875 - vala[2]) / 0.25)
+  lonind = map(Int64, 1 + (vala[3] -   0.125) / 0.25)
+  refb[a] = varb[lonind,latind]
+# refb[a] = (vala[OCUR]^2.0 + valb[OCUR]^2.0)^0.5
+##refb[a] = (vala[TOTN]^2.0 + valb[TOTN]^2.0)^0.5
 end
 
 statis = [MISS for a = 1:4, b = 1:MEMS, c = 1:PARS]                           # allocate a set of global cal/val arrays
@@ -258,7 +273,7 @@ statis[a,MEMO,CORR] = cor1 ; statis[a,MEMB,CORR] = cor2 ; statis[a,MEMA,CORR] = 
 @printf("%33s %8.4f %8.4f %8.4f %8.4f\n", " ", statis[a,MEMB,ALPH], statis[a,MEMB,BETA], statis[a,MEMB,SIGM], statis[a,MEMB,CORR])
 @printf("%33s %8.4f %8.4f %8.4f %8.4f\n", " ", statis[a,MEMA,ALPH], statis[a,MEMA,BETA], statis[a,MEMA,SIGM], statis[a,MEMA,CORR])
 
-fpb = My.ouvre(ARGS[1] * regionlab * ".cali.ploc", "w")
+fpb = My.ouvre(ARGS[1] * ".cali.ploc", "w")
 form = @sprintf("  mean param   CSPD is %6.2f\n", mean(glomas[1]))
 write(fpb, form)
 form = @sprintf("  mean param   CSPD is %6.2f\n", mean(glomas[2]))
@@ -374,33 +389,15 @@ function funb(a, b, c, min = -9e99, max = 9e99)
 end
 
       msk = trues(length(loccor)) # (abs(locbet) .< 10) # trues(length(loccor)) # (0 .< loccor .< 1) # (abs(localp) .< 10000) & (abs(locbet) .< 500) & (0 .< loccor .< 1)
-localpint =                                                                funb(My.integralexp(locmas[msk], localp[msk])..., minimum(localp[msk]), maximum(localp[msk]))
-localpfrm = @sprintf("localpint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(locmas[msk], localp[msk])..., minimum(localp[msk]), maximum(localp[msk]))
-locbetint =                                                                funb(My.integralexp(locmas[msk], locbet[msk])..., minimum(locbet[msk]), maximum(locbet[msk]))
-locbetfrm = @sprintf("locbetint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(locmas[msk], locbet[msk])..., minimum(locbet[msk]), maximum(locbet[msk]))
-locsigint =                                                                funb(My.integralexp(locmas[msk], locsig[msk])..., minimum(locsig[msk]), maximum(locsig[msk]))
-locsigfrm = @sprintf("locsigint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(locmas[msk], locsig[msk])..., minimum(locsig[msk]), maximum(locsig[msk]))
-loccorint =                                                                funb(My.integralexp(locmas[msk], loccor[msk])..., 0.0, 1.0)
-loccorfrm = @sprintf("loccorint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(locmas[msk], loccor[msk])..., 0.0, 1.0)
+localpint = funb(My.integralexp(locmas[msk], localp[msk])..., minimum(localp[msk]), maximum(localp[msk]))
+locbetint = funb(My.integralexp(locmas[msk], locbet[msk])..., minimum(locbet[msk]), maximum(locbet[msk]))
+locsigint = funb(My.integralexp(locmas[msk], locsig[msk])..., minimum(locsig[msk]), maximum(locsig[msk]))
+loccorint = funb(My.integralexp(locmas[msk], loccor[msk])..., 0.0, 1.0)
       msk = trues(length(lodcor)) # (abs(lodbet) .< 10) # trues(length(lodcor)) # (0 .< lodcor .< 1) # (abs(lodalp) .< 10000) & (abs(lodbet) .< 500) & (0 .< lodcor .< 1)
-lodalpint =                                                                funb(My.integralexp(lodmas[msk], lodalp[msk])..., minimum(lodalp[msk]), maximum(lodalp[msk]))
-lodalpfrm = @sprintf("lodalpint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(lodmas[msk], lodalp[msk])..., minimum(lodalp[msk]), maximum(lodalp[msk]))
-lodbetint =                                                                funb(My.integralexp(lodmas[msk], lodbet[msk])..., minimum(lodbet[msk]), maximum(lodbet[msk]))
-lodbetfrm = @sprintf("lodbetint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(lodmas[msk], lodbet[msk])..., minimum(lodbet[msk]), maximum(lodbet[msk]))
-lodsigint =                                                                funb(My.integralexp(lodmas[msk], lodsig[msk])..., minimum(lodsig[msk]), maximum(lodsig[msk]))
-lodsigfrm = @sprintf("lodsigint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(lodmas[msk], lodsig[msk])..., minimum(lodsig[msk]), maximum(lodsig[msk]))
-lodcorint =                                                                funb(My.integralexp(lodmas[msk], lodcor[msk])..., 0.0, 1.0)
-lodcorfrm = @sprintf("lodcorint a,b,c,min,max %8.4f %8.4f %8.4f %8.4f %8.4f\n", My.integralexp(lodmas[msk], lodcor[msk])..., 0.0, 1.0)
-fpb = My.ouvre(ARGS[1] * regionlab * ".cali.funb", "w")
-write(fpb, localpfrm)
-write(fpb, locbetfrm)
-write(fpb, locsigfrm)
-write(fpb, loccorfrm)
-write(fpb, lodalpfrm)
-write(fpb, lodbetfrm)
-write(fpb, lodsigfrm)
-write(fpb, lodcorfrm)
-close(fpb)
+lodalpint = funb(My.integralexp(lodmas[msk], lodalp[msk])..., minimum(lodalp[msk]), maximum(lodalp[msk]))
+lodbetint = funb(My.integralexp(lodmas[msk], lodbet[msk])..., minimum(lodbet[msk]), maximum(lodbet[msk]))
+lodsigint = funb(My.integralexp(lodmas[msk], lodsig[msk])..., minimum(lodsig[msk]), maximum(lodsig[msk]))
+lodcorint = funb(My.integralexp(lodmas[msk], lodcor[msk])..., 0.0, 1.0)
 
 for a = 1:tinuma                                                              # recalibrate using the calibration parameters from
   vala = float(split(tinea[a]))                                               # the other set; first get a refbef from gloalp/bet
@@ -409,7 +406,11 @@ for a = 1:tinuma                                                              # 
 # refaft = (  vala[TOTA]                          ^2.0 +   valb[TOTA]                          ^2.0)^0.5
 # refbef = (((vala[TOTB] - gloalp[2]) / globet[2])^2.0 + ((valb[TOTB] - gloalp[2]) / globet[2])^2.0)^0.5
 # refaft = (((vala[TOTA] - gloalp[2]) / globet[2])^2.0 + ((valb[TOTA] - gloalp[2]) / globet[2])^2.0)^0.5
-  refnow = (  vala[TOTN]                          ^2.0 +   valb[TOTN]                          ^2.0)^0.5
+##refnow = (  vala[TOTN]                          ^2.0 +   valb[TOTN]                          ^2.0)^0.5
+  vala[3] < 0 && (vala[3] += 360.0)
+  latind = map(Int64, 1 + ( 89.875 - vala[2]) / 0.25)
+  lonind = map(Int64, 1 + (vala[3] -   0.125) / 0.25)
+  refnow = varb[lonind,latind]
 # alpbef = lodalpint.minimum[1] * refbef^2 + lodalpint.minimum[2] * refbef + lodalpint.minimum[3]
 # alpaft = lodalpint.minimum[1] * refaft^2 + lodalpint.minimum[2] * refaft + lodalpint.minimum[3]
 # betbef = lodbetint.minimum[1] * refbef^2 + lodbetint.minimum[2] * refbef + lodbetint.minimum[3]
@@ -452,7 +453,11 @@ for a = 1:tinumb                                                              # 
 # refaft = (  vala[TOTA]                          ^2.0 +   valb[TOTA]                          ^2.0)^0.5
 # refbef = (((vala[TOTB] - gloalp[1]) / globet[1])^2.0 + ((valb[TOTB] - gloalp[1]) / globet[1])^2.0)^0.5
 # refaft = (((vala[TOTA] - gloalp[1]) / globet[1])^2.0 + ((valb[TOTA] - gloalp[1]) / globet[1])^2.0)^0.5
-  refnow = (  vala[TOTN]                          ^2.0 +   valb[TOTN]                          ^2.0)^0.5
+##refnow = (  vala[TOTN]                          ^2.0 +   valb[TOTN]                          ^2.0)^0.5
+  vala[3] < 0 && (vala[3] += 360.0)
+  latind = map(Int64, 1 + ( 89.875 - vala[2]) / 0.25)
+  lonind = map(Int64, 1 + (vala[3] -   0.125) / 0.25)
+  refnow = varb[lonind,latind]
 # alpbef = localpint.minimum[1] * refbef^2 + localpint.minimum[2] * refbef + localpint.minimum[3]
 # alpaft = localpint.minimum[1] * refaft^2 + localpint.minimum[2] * refaft + localpint.minimum[3]
 # betbef = locbetint.minimum[1] * refbef^2 + locbetint.minimum[2] * refbef + locbetint.minimum[3]
@@ -486,7 +491,7 @@ statis[a,MEMO,CORR] = cor1 ; statis[a,MEMB,CORR] = cor2 ; statis[a,MEMA,CORR] = 
 @printf("%33s %8.4f %8.4f %8.4f %8.4f\n", " ", statis[a,MEMB,ALPH], statis[a,MEMB,BETA], statis[a,MEMB,SIGM], statis[a,MEMB,CORR])
 @printf("%33s %8.4f %8.4f %8.4f %8.4f\n", " ", statis[a,MEMA,ALPH], statis[a,MEMA,BETA], statis[a,MEMA,SIGM], statis[a,MEMA,CORR])
 
-fpb = My.ouvre(ARGS[1]  * regionlab * ".cali.ploc", "a")
+fpb = My.ouvre(ARGS[1] * ".cali.ploc", "a")
 form = @sprintf("  mean param   CSPD is %6.2f %s\n", mean(glomas[3]), tmpstr)
 write(fpb, form)
 form = @sprintf("  mean param   CSPD is %6.2f %s\n", mean(glomas[4]), tmpstr)
@@ -534,21 +539,17 @@ for (a, ref) in enumerate(tars)
   coro[a,2] = lodcorint(ref) #.minimum[1] * ref^2 + lodcorint.minimum[2] * ref + lodcorint.minimum[3]
 end
 
-zonmed = ""
-contains(ARGS[1], ".ucur") && (zonmed = " for U")
-contains(ARGS[1], ".vcur") && (zonmed = " for V")
-
 ppp = Winston.Table(2,2) ; setattr(ppp, "cellpadding", -0.5)                  # and then create the plots
 for z = 1:4
-  z == 1 && (varname = "a) Additive Bias (ms^{-1})" * zonmed ; bound = tarn ; grid = alpn ; tpos = (1,1) ; grie = alpo)
-  z == 2 && (varname = "b) Multiplicative Bias"     * zonmed ; bound = tarn ; grid = betn ; tpos = (1,2) ; grie = beto)
-  z == 3 && (varname = "c) RMSE (ms^{-1})"          * zonmed ; bound = tarn ; grid = sign ; tpos = (2,1) ; grie = sigo)
-  z == 4 && (varname = "d) Correlation"             * zonmed ; bound = tarn ; grid = corn ; tpos = (2,2) ; grie = coro)
+  z == 1 && (varname = "a) Bias (ms^{-1})" ; bound = tarn ; grid = alpn ; tpos = (1,1) ; grie = alpo)
+  z == 2 && (varname = "b) Slope"          ; bound = tarn ; grid = betn ; tpos = (1,2) ; grie = beto)
+  z == 3 && (varname = "c) RMSE (ms^{-1})" ; bound = tarn ; grid = sign ; tpos = (2,1) ; grie = sigo)
+  z == 4 && (varname = "d) Correlation"    ; bound = tarn ; grid = corn ; tpos = (2,2) ; grie = coro)
 
-  z == 1 && (xmin = 0.05 ; xmax = 1.15 ; ymin = -0.1 ; ymax = 0.1)            # and locate the plot limits
-  z == 2 && (xmin = 0.05 ; xmax = 1.15 ; ymin =  0.4 ; ymax = 4.0)
-  z == 3 && (xmin = 0.05 ; xmax = 1.15 ; ymin =  0.0 ; ymax = 0.2)
-  z == 4 && (xmin = 0.05 ; xmax = 1.15 ; ymin =  0.8 ; ymax = 1.0)
+  z == 1 && (xmin = 0.0 ; xmax = 5050. ; ymin = -0.2 ; ymax = 0.2)            # and locate the plot limits
+  z == 2 && (xmin = 0.0 ; xmax = 5050. ; ymin = -2.0 ; ymax = 10.0)
+  z == 3 && (xmin = 0.0 ; xmax = 5050. ; ymin =  0.0 ; ymax = 0.3)
+  z == 4 && (xmin = 0.0 ; xmax = 5050. ; ymin =  0.5 ; ymax = 1.0)
 
   ump = Array(Any, 4)
   cols = [  "red",  "blue",    "red",   "blue"]
@@ -569,19 +570,15 @@ for z = 1:4
                setattr(ump[a+2], label = dirs[a+2])
                Winston.add(ppp[tpos...], ump[a+2])
   end
-  if z == 2 && argc == 2
+  if z == 2
     tmp = Winston.Legend(.45, .82, Any[ump[1], ump[2], ump[3], ump[4]])
           Winston.add(ppp[tpos...], tmp)
 #   tmp = Winston.Legend(.70, .82, Any[ump[5], ump[6], ump[7], ump[8]])
 #         Winston.add(ppp[tpos...], tmp)
   end
-  if z == 2 && argc == 3
-    tmp = Winston.PlotLabel(.45, .82, regionlab[2:end], "texthalign", "left", "size", 3.0)
-          Winston.add(ppp[tpos...], tmp)
-  end
 end
 
-xyzzy = ARGS[1] * regionlab * ".cali.ploc.png"
+xyzzy = ARGS[1] * ".cali.ploc.bath.png"
 print("writing $xyzzy\n")
 Winston.savefig(ppp, xyzzy, "width", 1700, "height", 1000)
 exit(0)

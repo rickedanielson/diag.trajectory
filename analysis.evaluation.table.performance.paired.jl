@@ -38,6 +38,16 @@ for a = 1:argc                                                                # 
   strd =     float(vals[5])      >     float(valz[5])      ? "**" * vals[5] * "/" * valz[5] * "**" : vals[5] * "/" * valz[5]
   form = @sprintf("| %7s | %18s |  %18s |  %18s |  %18s |\n", varname, stra, strb, strc, strd)
   write(fpa, form)
+
+  vals = split(lines[5])
+  valz = split(lines[9])
+
+  stra = abs(float(vals[2]) - 0) < abs(float(valz[2]) - 0) ? "**" * vals[2] * "/" * valz[2] * "**" : vals[2] * "/" * valz[2]
+  strb = abs(float(vals[3]) - 1) < abs(float(valz[3]) - 1) ? "**" * vals[3] * "/" * valz[3] * "**" : vals[3] * "/" * valz[3]
+  strc =     float(vals[4])      <     float(valz[4])      ? "**" * vals[4] * "/" * valz[4] * "**" : vals[4] * "/" * valz[4]
+  strd =     float(vals[5])      >     float(valz[5])      ? "**" * vals[5] * "/" * valz[5] * "**" : vals[5] * "/" * valz[5]
+  form = @sprintf("| %7s | %18s |  %18s |  %18s |  %18s |\n", varname, stra, strb, strc, strd)
+  write(fpa, form)
 end
 
 close(fpa)
